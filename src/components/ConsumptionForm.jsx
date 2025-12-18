@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
+import { getWeekIdFromDate } from '../utils/weekUtils';
 import { X } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const ConsumptionForm = ({ onClose }) => {
     const { registerConsumption, getCurrentWeekId } = useAppContext();
+
+    const getToday = () => new Date().toISOString().split('T')[0];
+    const [date, setDate] = useState(getToday());
+
     const [formData, setFormData] = useState({
         name: '',
         cost: '',
@@ -12,6 +18,12 @@ const ConsumptionForm = ({ onClose }) => {
         weekId: getCurrentWeekId(),
         source: 'Schenking/Stock'
     });
+
+    useEffect(() => {
+        if (date) {
+            setFormData(prev => ({ ...prev, weekId: getWeekIdFromDate(date) }));
+        }
+    }, [date]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -31,7 +43,7 @@ const ConsumptionForm = ({ onClose }) => {
         onClose();
     };
 
-    return (
+    return createPortal(
         <div className="modal-overlay" style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
@@ -72,18 +84,26 @@ const ConsumptionForm = ({ onClose }) => {
                         </div>
                     </div>
 
-                    <label>Week van Verbruik</label>
-                    <input
-                        className="input-field"
-                        value={formData.weekId}
-                        onChange={e => setFormData({ ...formData, weekId: e.target.value })}
-                        required
-                    />
+                    <label>Datum van Verbruik</label>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <input
+                            className="input-field"
+                            type="date"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            required
+                            style={{ marginBottom: 0 }}
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                            Week: <strong>{formData.weekId}</strong>
+                        </span>
+                    </div>
 
                     <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Verbruik</button>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

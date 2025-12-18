@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getDateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp } from 'lucide-react';
+import { Plus, ShoppingCart, Truck, TrendingUp, Trash2 } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
@@ -16,8 +16,8 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1>Wekelijks Gedetailleerd Overzicht</h1>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+               
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <button onClick={() => setActiveModal('order')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Plus size={18} /> Nieuwe Bestelling
@@ -32,7 +32,7 @@ const Dashboard = () => {
             {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
-            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {timeline.map((item) => (
                     <WeeklyCard key={item.weekId} data={item} onAddAdhoc={() => setActiveModal('consumption')} />
                 ))}
@@ -78,23 +78,23 @@ EditableCell.propTypes = {
 };
 
 const WeeklyCard = ({ data, onAddAdhoc }) => {
-    const { updateItem } = useAppContext();
+    const { updateItem, deleteItem } = useAppContext();
     const { weekId, offset, stats } = data;
     const isCurrent = offset === 0;
 
     return (
         <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-                <h2 style={{ margin: 0 }}>
-                    Week {weekId} <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>(Levering: {getDateOfTuesday(weekId)})</span>
+                <h3 style={{ margin: 0 }}>
+                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
-                </h2>
+                </h3>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
                     Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {/* 1. Bestellingen */}
                 <section>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
@@ -107,6 +107,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 <th>Aantal</th>
                                 <th>Prijs (p/u)</th>
                                 <th>Subtotaal</th>
+                                <th style={{ width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -116,8 +117,17 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                     <td><EditableCell value={o.qty} type="number" onSave={val => updateItem('order', o.id, { qty: val })} /></td>
                                     <td>€<EditableCell value={o.price} type="number" onSave={val => updateItem('order', o.id, { price: val })} /></td>
                                     <td><strong>€{(o.qty * o.price).toFixed(2)}</strong></td>
+                                    <td>
+                                        <button 
+                                            onClick={() => deleteItem('order', o.id)}
+                                            style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
+                                            title="Verwijder bestelling"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
                                 </tr>
-                            )) : <tr><td colSpan="4" className="empty-text">Geen bestellingen</td></tr>}
+                            )) : <tr><td colSpan="5" className="empty-text">Geen bestellingen</td></tr>}
                         </tbody>
                     </table>
                 </section>
@@ -134,6 +144,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 <th>Aantal</th>
                                 <th>Prijs (p/u)</th>
                                 <th>Subtotaal</th>
+                                <th style={{ width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -143,8 +154,17 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                     <td><EditableCell value={d.qty} type="number" onSave={val => updateItem('delivery', d.id, { qty: val })} /></td>
                                     <td>€<EditableCell value={d.price} type="number" onSave={val => updateItem('delivery', d.id, { price: val })} /></td>
                                     <td><strong>€{(d.qty * d.price).toFixed(2)}</strong></td>
+                                    <td>
+                                        <button 
+                                            onClick={() => deleteItem('delivery', d.id)}
+                                            style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
+                                            title="Verwijder levering"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
                                 </tr>
-                            )) : <tr><td colSpan="4" className="empty-text">Geen leveringen</td></tr>}
+                            )) : <tr><td colSpan="5" className="empty-text">Geen leveringen</td></tr>}
                         </tbody>
                     </table>
                 </section>
@@ -165,6 +185,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 <th>Totaal Kost</th>
                                 <th>Gevraagd/Eff. Duur</th>
                                 <th>Kost p/w</th>
+                                <th style={{ width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -196,8 +217,17 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         )}
                                     </td>
                                     <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
+                                    <td>
+                                        <button 
+                                            onClick={() => deleteItem('consumption', c.id)}
+                                            style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
+                                            title="Verwijder verbruik"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
                                 </tr>
-                            )) : <tr><td colSpan="5" className="empty-text">Geen verbruik deze week</td></tr>}
+                            )) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
                         </tbody>
                     </table>
                 </section>

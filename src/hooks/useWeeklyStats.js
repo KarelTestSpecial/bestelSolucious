@@ -53,7 +53,7 @@ export const useWeeklyStats = () => {
     };
 
     const getTimeline = () => {
-        return [-1, 0, 1, 2, 3, 4].map(offset => {
+        return [0, 1, 2, 3, 4].map(offset => {
             const weekId = getRelativeWeekId(offset);
             return {
                 offset,

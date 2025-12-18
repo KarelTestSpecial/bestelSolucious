@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
+import { getWeekIdFromDate } from '../utils/weekUtils';
 import { X, AlertCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 
@@ -11,6 +13,9 @@ const DeliveryForm = ({ onClose }) => {
     return !activeData.deliveries.some(d => d.orderId === order.id);
   });
 
+  const getToday = () => new Date().toISOString().split('T')[0];
+  const [date, setDate] = useState(getToday());
+
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [deliveryData, setDeliveryData] = useState({
     price: '',
@@ -19,6 +24,12 @@ const DeliveryForm = ({ onClose }) => {
     estDuration: 1,
     weekId: getCurrentWeekId()
   });
+
+  useEffect(() => {
+    if (date) {
+        setDeliveryData(prev => ({ ...prev, weekId: getWeekIdFromDate(date) }));
+    }
+  }, [date]);
 
   const handleOrderChange = (e) => {
     const orderId = e.target.value;
@@ -67,7 +78,7 @@ const DeliveryForm = ({ onClose }) => {
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
       backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
@@ -129,11 +140,27 @@ const DeliveryForm = ({ onClose }) => {
               required
             />
 
+            <label>Effectieve Leverdatum</label>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <input
+                    className="input-field"
+                    type="date"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    required
+                    style={{ marginBottom: 0 }}
+                />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                    Week: <strong>{deliveryData.weekId}</strong>
+                </span>
+            </div>
+
             <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Bevestig Levering & Start Verbruik</button>
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

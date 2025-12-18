@@ -95,6 +95,40 @@ export const AppProvider = ({ children }) => {
             });
             fetchData();
         }
+        // Voeg hier logica toe voor order/delivery updates indien nodig
+        if(type === 'order') {
+            // Voorlopig ondersteunen we geen directe updates via API voor orders in deze demo, 
+            // maar je zou hier een PATCH /api/orders/:id kunnen toevoegen
+            console.log("Update order not fully implemented yet on server");
+             // Update local state for immediate feedback (optimistic UI) if needed, 
+             // but for now relying on fetchData is safer.
+        }
+    };
+
+    const deleteItem = async (type, id) => {
+        let endpoint = '';
+        if (type === 'order') endpoint = `/api/orders/${id}`;
+        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
+        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
+
+        if (endpoint) {
+            await fetch(endpoint, { method: 'DELETE' });
+            fetchData();
+        }
+    };
+
+    const addBulkOrders = async (weekId, orders) => {
+        try {
+            await fetch('/api/orders/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weekId, orders }),
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Bulk import failed", error);
+            throw error; // Laat component error afhandelen
+        }
     };
 
     const value = {
@@ -102,15 +136,16 @@ export const AppProvider = ({ children }) => {
         archive,
         isLoading,
         addOrder,
+        addBulkOrders, // Nieuwe functie
         confirmDelivery,
         registerConsumption,
         updateItem,
+        deleteItem,
         getCurrentWeekId,
         getRelativeWeekId,
         // Mock functions for export/import to prevent crashes
         exportData: () => console.log("Export not implemented yet"),
         importData: () => console.log("Import not implemented yet"),
-        addBulkData: () => console.log("Bulk not implemented yet")
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
