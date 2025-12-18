@@ -16,6 +16,7 @@ const OrderForm = ({ onClose }) => {
         name: '',
         price: '',
         qty: 1,
+        estDuration: 1,
         weekId: getCurrentWeekId()
     });
 
@@ -38,6 +39,7 @@ const OrderForm = ({ onClose }) => {
             name: formData.name, // Temporary: in real app products are separate
             price: parseFloat(formData.price),
             qty: parseInt(formData.qty),
+            estDuration: parseFloat(formData.estDuration),
             weekId: formData.weekId
         });
 
@@ -88,22 +90,33 @@ const OrderForm = ({ onClose }) => {
                         </div>
                     </div>
 
-                    <label>Leverdatum</label>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <input
-                            className="input-field"
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            required
-                            style={{ marginBottom: 0 }}
-                        />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                            Week: <strong>{formData.weekId}</strong>
-                        </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label>Verwachte Duur (w)</label>
+                            <input
+                                className="input-field"
+                                type="number" min="1"
+                                value={formData.estDuration}
+                                onChange={e => setFormData({ ...formData, estDuration: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label>Leverdatum</label>
+                            <input
+                                className="input-field"
+                                type="date"
+                                value={date}
+                                onChange={e => setDate(e.target.value)}
+                                onFocus={(e) => e.target.showPicker?.()}
+                                onClick={(e) => e.target.showPicker?.()}
+                                required
+                                style={{ marginBottom: 0 }}
+                            />
+                        </div>
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                        De bestelling wordt gekoppeld aan week {formData.weekId}.
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: '0.2rem' }}>
+                        Week: <strong>{formData.weekId}</strong>
                     </p>
 
                     <button type="submit" style={{ width: '100%', marginTop: '1.5rem' }}>Bestelling Toevoegen</button>

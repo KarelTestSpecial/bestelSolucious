@@ -14,8 +14,15 @@ const Inventory = () => {
 
         const totalConsumed = activeData.consumption
             .filter(c => {
+                // Alleen voltooide items tellen als verbruikt uit de stock
+                if (!c.completed) return false;
+
                 // Als de source een delivery is van dit product
-                if (c.sourceType === 'delivery') {
+                if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
+                    // Voor adhoc items, checken we of de naam overeenkomt als er geen directe product link is
+                    // Maar idealiter linken we via delivery ID.
+                    // Echter, adhoc consumption heeft sourceId = deliveryId (door onze vorige fix).
+                    // Dus we moeten de delivery vinden.
                     const del = activeData.deliveries.find(d => d.id === c.sourceId);
                     return del && del.productId === product.id;
                 }
@@ -29,11 +36,11 @@ const Inventory = () => {
             delivered: totalDelivered,
             consumed: totalConsumed
         };
-    });
+    }).filter(item => item.stock > 0);
 
     return (
         <div className="inventory">
-            <h1>Persoonlijke Voorraad</h1>
+            <h1>Persoonlijke Voorziene voorraad</h1>
 
             <div className="glass-panel table-container">
                 <table>

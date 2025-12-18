@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const ConsumptionForm = ({ onClose }) => {
-    const { registerConsumption, getCurrentWeekId } = useAppContext();
+    const { addAdhocDelivery, getCurrentWeekId } = useAppContext();
 
     const getToday = () => new Date().toISOString().split('T')[0];
     const [date, setDate] = useState(getToday());
@@ -15,6 +15,7 @@ const ConsumptionForm = ({ onClose }) => {
         name: '',
         cost: '',
         qty: 1,
+        estDuration: 1,
         weekId: getCurrentWeekId(),
         source: 'Schenking/Stock'
     });
@@ -28,16 +29,29 @@ const ConsumptionForm = ({ onClose }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        registerConsumption({
-            sourceId: crypto.randomUUID(), // Ad-hoc has its own unique ID
+        const id = crypto.randomUUID();
+        const totalCost = parseFloat(formData.cost);
+        const qty = parseInt(formData.qty);
+        const unitPrice = totalCost / qty;
+
+        addAdhocDelivery({
+            id: id,
+            orderId: null, // No order
+            productId: 'ADHOC-' + id, // Dummy product ID
+            name: formData.name,
+            price: unitPrice,
+            qty: qty,
+            weekId: formData.weekId
+        }, {
+            sourceId: id,
             sourceType: 'adhoc',
             name: formData.name,
-            qty: parseInt(formData.qty),
-            cost: parseFloat(formData.cost),
+            qty: qty,
+            cost: totalCost,
             startDate: formData.weekId,
-            estDuration: 1, // Ad-hoc is usually for the same week
-            effDuration: 1,
-            completed: true
+            estDuration: parseInt(formData.estDuration),
+            effDuration: null,
+            completed: false
         });
 
         onClose();
@@ -84,20 +98,35 @@ const ConsumptionForm = ({ onClose }) => {
                         </div>
                     </div>
 
-                    <label>Datum van Verbruik</label>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <input
-                            className="input-field"
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            required
-                            style={{ marginBottom: 0 }}
-                        />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                            Week: <strong>{formData.weekId}</strong>
-                        </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                         <div>
+                            <label>Verwachte Duur (weken)</label>
+                            <input
+                                className="input-field" type="number" min="1"
+                                value={formData.estDuration}
+                                onChange={e => setFormData({ ...formData, estDuration: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label>Datum van Verbruik</label>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                    className="input-field"
+                                    type="date"
+                                    value={date}
+                                    onChange={e => setDate(e.target.value)}
+                                    onFocus={(e) => e.target.showPicker?.()}
+                                    onClick={(e) => e.target.showPicker?.()}
+                                    required
+                                    style={{ marginBottom: 0, flex: 1 }}
+                                />
+                            </div>
+                        </div>
                     </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: '0.2rem' }}>
+                        Week: <strong>{formData.weekId}</strong>
+                    </p>
 
                     <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Verbruik</button>
                 </form>

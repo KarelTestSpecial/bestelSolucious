@@ -15,25 +15,26 @@ model Product {
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  productId String
-  name      String
-  price     Float
-  qty       Float
-  weekId    String   // Bijv "2025-W01"
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  productId   String
+  name        String
+  price       Float
+  qty         Float
+  estDuration Float    @default(1)
+  weekId      String   // Bijv "2025-W01"
+  createdAt   DateTime @default(now())
 }
 
 model Delivery {
-  id        String   @id @default(uuid())
-  orderId   String?  // Nullable voor Ad-hoc
-  productId String
-  name      String
-  price     Float
-  qty       Float
-  variant   String?
-  weekId    String
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  orderId     String?  // Nullable for Ad-hoc
+  productId   String
+  name        String
+  price       Float
+  qty         Float
+  estDuration Float    @default(1)
+  weekId      String
+  createdAt   DateTime @default(now())
 }
 
 model Consumption {

@@ -68,13 +68,12 @@ const HistoryView = () => {
                             <th>Aantal</th>
                             <th>Prijs (p/u)</th>
                             <th>Totaal</th>
-                            {view === 'deliveries' && <th>Variant</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {displayData.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                                     Geen {view === 'orders' ? 'bestellingen' : 'leveringen'} gevonden.
                                 </td>
                             </tr>
@@ -93,11 +92,6 @@ const HistoryView = () => {
                                     </td>
                                     <td>€{item.price.toFixed(2)}</td>
                                     <td><strong>€{(item.qty * item.price).toFixed(2)}</strong></td>
-                                    {view === 'deliveries' && (
-                                        <td style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                                            {item.variant || '-'}
-                                        </td>
-                                    )}
                                 </tr>
                             ))
                         )}

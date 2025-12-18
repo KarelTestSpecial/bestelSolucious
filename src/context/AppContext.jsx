@@ -19,6 +19,15 @@ export const AppProvider = ({ children }) => {
     });
     const [archive] = useState([]); // Voor later
     const [isLoading, setIsLoading] = useState(true);
+    const [undoStack, setUndoStack] = useState([]);
+    const [redoStack, setRedoStack] = useState([]);
+
+    // Helper to push current state to undo stack
+    const pushToUndoStack = () => {
+        // We limit the stack size to 20 for memory efficiency
+        setUndoStack(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(activeData))]);
+        setRedoStack([]); // Clear redo stack on new action
+    };
 
     // Initial data fetch
     const fetchData = async () => {
@@ -58,6 +67,7 @@ export const AppProvider = ({ children }) => {
     // --- Actions ---
 
     const addOrder = async (order) => {
+        pushToUndoStack();
         await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -67,6 +77,7 @@ export const AppProvider = ({ children }) => {
     };
 
     const confirmDelivery = async (delivery) => {
+        pushToUndoStack();
         await fetch('/api/deliveries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -75,8 +86,27 @@ export const AppProvider = ({ children }) => {
         fetchData();
     };
 
-    // DEZE ONTBRAK IN JOUW CODE:
+    const confirmBulkDeliveries = async (deliveries) => {
+        pushToUndoStack();
+        for (const { delivery, consumption } of deliveries) {
+            await fetch('/api/deliveries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(delivery),
+            });
+            if (consumption) {
+                await fetch('/api/consumption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(consumption),
+                });
+            }
+        }
+        fetchData();
+    };
+
     const registerConsumption = async (consumptionItem) => {
+        pushToUndoStack();
         await fetch('/api/consumption', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -85,23 +115,39 @@ export const AppProvider = ({ children }) => {
         fetchData();
     };
 
+    const addAdhocDelivery = async (delivery, consumption) => {
+        // Create delivery
+        await fetch('/api/deliveries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delivery),
+        });
+
+        // Create consumption linked to it
+        if (consumption) {
+            await fetch('/api/consumption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(consumption),
+            });
+        }
+        fetchData();
+    };
+
     const updateItem = async (type, id, updates) => {
-        // Simpele update logica voor nu, voornamelijk voor consumption status
-        if(type === 'consumption') {
-            await fetch(`/api/consumption/${id}`, {
+        let endpoint = '';
+        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
+        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
+        if (type === 'order') endpoint = `/api/orders/${id}`;
+
+        if (endpoint) {
+            pushToUndoStack();
+            await fetch(endpoint, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates),
             });
             fetchData();
-        }
-        // Voeg hier logica toe voor order/delivery updates indien nodig
-        if(type === 'order') {
-            // Voorlopig ondersteunen we geen directe updates via API voor orders in deze demo, 
-            // maar je zou hier een PATCH /api/orders/:id kunnen toevoegen
-            console.log("Update order not fully implemented yet on server");
-             // Update local state for immediate feedback (optimistic UI) if needed, 
-             // but for now relying on fetchData is safer.
         }
     };
 
@@ -112,6 +158,7 @@ export const AppProvider = ({ children }) => {
         if (type === 'consumption') endpoint = `/api/consumption/${id}`;
 
         if (endpoint) {
+            pushToUndoStack();
             await fetch(endpoint, { method: 'DELETE' });
             fetchData();
         }
@@ -119,6 +166,7 @@ export const AppProvider = ({ children }) => {
 
     const addBulkOrders = async (weekId, orders) => {
         try {
+            pushToUndoStack();
             await fetch('/api/orders/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -131,21 +179,107 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    const exportData = () => {
+        const dataStr = JSON.stringify(activeData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `bestel-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+    };
+
+    const importData = async (jsonData, skipUndo = false) => {
+        try {
+            if (!skipUndo) pushToUndoStack();
+            
+            // For restore, we first need to clear the current state to ensure a clean slate,
+            // otherwise 'restore' (which uses upsert) won't remove deleted items.
+            await fetch('/api/clear', { method: 'DELETE' });
+
+            const res = await fetch('/api/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData),
+            });
+            const result = await res.json();
+            if (result.success) {
+                fetchData();
+                return true;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error("Import failed:", error);
+            alert("Herstel mislukt: " + error.message);
+            return false;
+        }
+    };
+
+    const undo = async () => {
+        if (undoStack.length === 0) return;
+        
+        const prevState = undoStack[undoStack.length - 1];
+        const currentState = JSON.parse(JSON.stringify(activeData));
+        
+        setUndoStack(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, currentState]);
+        
+        await importData(prevState, true);
+    };
+
+    const redo = async () => {
+        if (redoStack.length === 0) return;
+        
+        const nextState = redoStack[redoStack.length - 1];
+        const currentState = JSON.parse(JSON.stringify(activeData));
+        
+        setRedoStack(prev => prev.slice(0, -1));
+        setUndoStack(prev => [...prev, currentState]);
+        
+        await importData(nextState, true);
+    };
+
+    const clearDatabase = async () => {
+        try {
+            pushToUndoStack();
+            const res = await fetch('/api/clear', { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                fetchData();
+                return true;
+            }
+            throw new Error(result.error);
+        } catch (error) {
+            console.error("Clear failed:", error);
+            alert("Wissen mislukt: " + error.message);
+            return false;
+        }
+    };
+
     const value = {
         activeData,
         archive,
         isLoading,
+        canUndo: undoStack.length > 0,
+        canRedo: redoStack.length > 0,
+        undo,
+        redo,
         addOrder,
-        addBulkOrders, // Nieuwe functie
+        addBulkOrders,
         confirmDelivery,
+        confirmBulkDeliveries,
         registerConsumption,
+        addAdhocDelivery,
         updateItem,
         deleteItem,
         getCurrentWeekId,
         getRelativeWeekId,
-        // Mock functions for export/import to prevent crashes
-        exportData: () => console.log("Export not implemented yet"),
-        importData: () => console.log("Import not implemented yet"),
+        exportData,
+        importData,
+        clearDatabase,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

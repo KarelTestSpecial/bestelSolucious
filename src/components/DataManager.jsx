@@ -4,7 +4,7 @@ import { getWeekIdFromDate } from '../utils/weekUtils';
 import { Download, Trash2, Database, FileText, Info } from 'lucide-react';
 
 const DataManager = () => {
-    const { exportData, importData, activeData, archive, addBulkOrders } = useAppContext();
+    const { exportData, importData, activeData, addBulkOrders, clearDatabase } = useAppContext();
     const [bulkText, setBulkText] = useState('');
     
     // Standaard datum: vandaag
@@ -88,10 +88,30 @@ const DataManager = () => {
         e.target.value = null;
     };
 
-    const clearData = () => {
+    const handleJSONUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const jsonData = JSON.parse(e.target.result);
+                if (confirm("Wil je deze backup samenvoegen met je huidige data?\n\n- Bestaande items worden bijgewerkt.\n- Nieuwe items worden toegevoegd.\n- Items die niet in de backup staan, blijven behouden.")) {
+                    const success = await importData(jsonData);
+                    if (success) alert("Data succesvol samengevoegd!");
+                }
+            } catch (err) {
+                alert("Ongeldig JSON bestand: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = null;
+    };
+
+    const clearData = async () => {
         if (confirm("Weet je zeker dat je alle data wilt wissen? Dit kan niet ongedaan worden gemaakt.")) {
-            // Dit werkt nu nog alleen lokaal, in een echte app moet dit ook via API
-            alert("Database wissen is nog niet geïmplementeerd in deze demo versie op de server.");
+            const success = await clearDatabase();
+            if (success) alert("Database is nu leeg.");
         }
     };
 
@@ -121,6 +141,8 @@ const DataManager = () => {
                                     className="input-field" 
                                     value={targetDate} 
                                     onChange={(e) => setTargetDate(e.target.value)}
+                                    onFocus={(e) => e.target.showPicker?.()}
+                                    onClick={(e) => e.target.showPicker?.()}
                                     style={{ maxWidth: '200px', marginBottom: 0 }}
                                 />
                                 <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>
@@ -134,7 +156,7 @@ const DataManager = () => {
                                     <li>Zorg dat elke regel 1 product is.</li>
                                     <li>Gebruik puntkomma (;), tab of komma als scheidingsteken.</li>
                                     <li>Kolom volgorde: <strong>Naam</strong> ; <strong>Aantal</strong> ; <strong>Prijs (optioneel)</strong></li>
-                                    <li>Prijs en aantal mogen komma's gebruiken voor decimalen.</li>
+                                    <li>Prijs en aantal mogen komma&apos;s gebruiken voor decimalen.</li>
                                 </ul>
                                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>
                                     Voorbeeld:<br/>
@@ -192,17 +214,30 @@ const DataManager = () => {
                 <section className="glass-panel">
                     <h3><Download size={18} /> Backup / Restore</h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                        Download een kopie van je lokale data (let op: volledige server backup is nog niet actief).
+                        Backup downloaden of een eerdere backup herstellen.
                     </p>
-                    <button onClick={exportData} style={{ width: '100%' }}>
-                        Exporteer JSON
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <button onClick={exportData} style={{ width: '100%' }}>
+                            Exporteer JSON
+                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="file"
+                                accept=".json"
+                                onChange={handleJSONUpload}
+                                style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', width: '100%' }}
+                            />
+                            <button className="badge-success" style={{ width: '100%' }}>
+                                Herstel JSON (Restore)
+                            </button>
+                        </div>
+                    </div>
                 </section>
 
                 <section className="glass-panel" style={{ border: '1px solid var(--danger-color)' }}>
                     <h3><Trash2 size={18} color="var(--danger-color)" /> Reset</h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '1rem 0' }}>
-                        Wis de data (Nog niet verbonden met API).
+                        Wis alle data in de database permanent.
                     </p>
                     <button onClick={clearData} className="badge-danger" style={{ width: '100%' }}>Wis alle data</button>
                 </section>

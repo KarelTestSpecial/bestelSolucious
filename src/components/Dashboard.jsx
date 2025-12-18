@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
-import { getDateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Trash2 } from 'lucide-react';
+import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
+import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Package, Undo2, Redo2 } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
@@ -10,15 +10,85 @@ import PropTypes from 'prop-types';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
+    const { activeData, undo, redo, canUndo, canRedo } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
 
     const timeline = getTimeline();
+
+    // Bereken voorraad
+    const inventoryMap = activeData.products.map(product => {
+        const totalDelivered = activeData.deliveries
+            .filter(d => d.productId === product.id)
+            .reduce((sum, d) => sum + d.qty, 0);
+
+        const totalConsumed = activeData.consumption
+            .filter(c => {
+                if (!c.completed) return false;
+                if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
+                    const del = activeData.deliveries.find(d => d.id === c.sourceId);
+                    return del && del.productId === product.id;
+                }
+                return false;
+            })
+            .reduce((sum, c) => sum + c.qty, 0);
+
+        return {
+            ...product,
+            stock: totalDelivered - totalConsumed,
+            delivered: totalDelivered,
+            consumed: totalConsumed
+        };
+    }).map(item => {
+        // Gebruik de meest recente naam uit leveringen of bestellingen
+        const lastDelivery = [...activeData.deliveries].reverse().find(d => d.productId === item.id);
+        if (lastDelivery && lastDelivery.name) return { ...item, name: lastDelivery.name };
+        
+        const lastOrder = [...activeData.orders].reverse().find(o => o.productId === item.id);
+        if (lastOrder && lastOrder.name) return { ...item, name: lastOrder.name };
+        
+        return item;
+    }).filter(item => item.stock > 0);
 
     return (
         <div className="dashboard">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '1rem', marginRight: '0.5rem' }}>
+                        <button 
+                            onClick={undo} 
+                            disabled={!canUndo}
+                            style={{ 
+                                background: '#6e40c9', 
+                                padding: '0.5rem', 
+                                opacity: canUndo ? 1 : 0.3, 
+                                cursor: canUndo ? 'pointer' : 'not-allowed',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="Ongedaan maken"
+                        >
+                            <Undo2 size={18} />
+                        </button>
+                        <button 
+                            onClick={redo} 
+                            disabled={!canRedo}
+                            style={{ 
+                                background: '#6e40c9', 
+                                padding: '0.5rem', 
+                                opacity: canRedo ? 1 : 0.3, 
+                                cursor: canRedo ? 'pointer' : 'not-allowed',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="Opnieuw uitvoeren"
+                        >
+                            <Redo2 size={18} />
+                        </button>
+                    </div>
+
                     <button onClick={() => setActiveModal('order')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Plus size={18} /> Nieuwe Bestelling
                     </button>
@@ -37,35 +107,109 @@ const Dashboard = () => {
                     <WeeklyCard key={item.weekId} data={item} onAddAdhoc={() => setActiveModal('consumption')} />
                 ))}
             </div>
+
+            <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', borderTop: '4px solid var(--accent-color)' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <Package /> Huidige Voorziene voorraad
+                </h3>
+                <div className="table-container">
+                    <table className="formal-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Status</th>
+                                <th>Geleverd</th>
+                                <th>Verbruikt (Op)</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {inventoryMap.length === 0 ? (
+                                <tr><td colSpan="5" className="empty-text">Geen voorraad data</td></tr>
+                            ) : inventoryMap.map(item => (
+                                <tr key={item.id}>
+                                    <td><strong>{item.name}</strong></td>
+                                    <td>
+                                        {item.stock <= 0 ? (
+                                            <span className="badge badge-danger">OP</span>
+                                        ) : item.stock < 2 ? (
+                                            <span className="badge badge-warning">LAAG</span>
+                                        ) : (
+                                            <span className="badge badge-success">OK</span>
+                                        )}
+                                    </td>
+                                    <td>{item.delivered}</td>
+                                    <td>{item.consumed}</td>
+                                    <td><strong>{item.stock}</strong></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
 
-const EditableCell = ({ value, onSave, type = 'text', suffix = '' }) => {
+const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2 }) => {
     const [isEditing, setIsEditing] = useState(false);
+    // For date type, we want to start with a real date string (YYYY-MM-DD)
     const [tempValue, setTempValue] = useState(value);
+    const inputRef = useRef(null);
+
+    const handleStartEdit = () => {
+        if (type === 'date') {
+            setTempValue(getISODateOfTuesday(value));
+        } else {
+            setTempValue(value);
+        }
+        setIsEditing(true);
+    };
 
     const handleBlur = () => {
         setIsEditing(false);
-        onSave(type === 'number' ? parseFloat(tempValue) : tempValue);
+        let finalValue = tempValue;
+        if (type === 'number') finalValue = parseFloat(tempValue);
+        if (type === 'date') finalValue = getWeekIdFromDate(tempValue);
+        onSave(finalValue);
     };
+
+    useEffect(() => {
+        const input = inputRef.current;
+        if (isEditing && input && type === 'number') {
+            const handleWheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1 : -1;
+                setTempValue(prev => {
+                    const num = parseFloat(prev);
+                    if (isNaN(num)) return prev;
+                    return (num + delta).toString();
+                });
+            };
+            input.addEventListener('wheel', handleWheel, { passive: false });
+            return () => input.removeEventListener('wheel', handleWheel);
+        }
+    }, [isEditing, type]);
 
     if (isEditing) {
         return (
             <input
+                ref={inputRef}
                 className="input-field" autoFocus
-                style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '80px' }}
+                style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: type === 'date' ? '150px' : '80px' }}
                 type={type} value={tempValue}
                 onChange={e => setTempValue(e.target.value)}
                 onBlur={handleBlur}
+                onFocus={(e) => type === 'date' && e.target.showPicker?.()}
+                onClick={(e) => type === 'date' && e.target.showPicker?.()}
                 onKeyDown={e => e.key === 'Enter' && handleBlur()}
             />
         );
     }
 
     return (
-        <span onClick={() => setIsEditing(true)} style={{ cursor: 'pointer', borderBottom: '1px dashed var(--accent-color)' }}>
-            {type === 'number' && typeof value === 'number' ? value.toFixed(2) : value}{suffix}
+        <span onClick={handleStartEdit} style={{ cursor: 'pointer', borderBottom: '1px dashed var(--accent-color)' }}>
+            {type === 'number' && typeof value === 'number' ? value.toFixed(precision) : value}{suffix}
         </span>
     );
 };
@@ -75,6 +219,7 @@ EditableCell.propTypes = {
     onSave: PropTypes.func.isRequired,
     type: PropTypes.string,
     suffix: PropTypes.string,
+    precision: PropTypes.number,
 };
 
 const WeeklyCard = ({ data, onAddAdhoc }) => {
@@ -106,6 +251,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 <th>Naam</th>
                                 <th>Aantal</th>
                                 <th>Prijs (p/u)</th>
+                                <th>Verwachtte Duur</th>
                                 <th>Subtotaal</th>
                                 <th style={{ width: '40px' }}></th>
                             </tr>
@@ -114,8 +260,9 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                             {stats.orders.length > 0 ? stats.orders.map(o => (
                                 <tr key={o.id}>
                                     <td><EditableCell value={o.name} onSave={val => updateItem('order', o.id, { name: val })} /></td>
-                                    <td><EditableCell value={o.qty} type="number" onSave={val => updateItem('order', o.id, { qty: val })} /></td>
+                                    <td><EditableCell value={o.qty} type="number" precision={0} onSave={val => updateItem('order', o.id, { qty: val })} /></td>
                                     <td>€<EditableCell value={o.price} type="number" onSave={val => updateItem('order', o.id, { price: val })} /></td>
+                                    <td><EditableCell value={o.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('order', o.id, { estDuration: val })} /></td>
                                     <td><strong>€{(o.qty * o.price).toFixed(2)}</strong></td>
                                     <td>
                                         <button 
@@ -127,22 +274,26 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         </button>
                                     </td>
                                 </tr>
-                            )) : <tr><td colSpan="5" className="empty-text">Geen bestellingen</td></tr>}
+                            )) : <tr><td colSpan="6" className="empty-text">Geen bestellingen</td></tr>}
                         </tbody>
                     </table>
                 </section>
 
-                {/* 2. Leveringen */}
+                {/* 2. Effectieve Leveringen */}
                 <section>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', marginBottom: '0.5rem' }}>
-                        <Truck size={16} /> Leveringen (€{stats.deliveryTotal.toFixed(2)})
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
+                            <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
+                        </h4>
+                        {isCurrent && <button onClick={onAddAdhoc} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>}
+                    </div>
                     <table className="formal-table">
                         <thead>
                             <tr>
                                 <th>Naam</th>
                                 <th>Aantal</th>
                                 <th>Prijs (p/u)</th>
+                                <th>Verwachte Duur</th>
                                 <th>Subtotaal</th>
                                 <th style={{ width: '40px' }}></th>
                             </tr>
@@ -151,8 +302,9 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                             {stats.deliveries.length > 0 ? stats.deliveries.map(d => (
                                 <tr key={d.id}>
                                     <td><EditableCell value={d.name || 'Geleverd Item'} onSave={val => updateItem('delivery', d.id, { name: val })} /></td>
-                                    <td><EditableCell value={d.qty} type="number" onSave={val => updateItem('delivery', d.id, { qty: val })} /></td>
+                                    <td><EditableCell value={d.qty} type="number" precision={0} onSave={val => updateItem('delivery', d.id, { qty: val })} /></td>
                                     <td>€<EditableCell value={d.price} type="number" onSave={val => updateItem('delivery', d.id, { price: val })} /></td>
+                                    <td><EditableCell value={d.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('delivery', d.id, { estDuration: val })} /></td>
                                     <td><strong>€{(d.qty * d.price).toFixed(2)}</strong></td>
                                     <td>
                                         <button 
@@ -164,73 +316,110 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         </button>
                                     </td>
                                 </tr>
-                            )) : <tr><td colSpan="5" className="empty-text">Geen leveringen</td></tr>}
+                            )) : <tr><td colSpan="6" className="empty-text">Geen leveringen</td></tr>}
                         </tbody>
                     </table>
                 </section>
 
-                {/* 3. In Verbruik & Ad-hoc */}
+                {/* 3. In Effectief Verbruik */}
                 <section>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0 }}>
-                            <TrendingUp size={16} /> Verbruik & Ad-hoc
+                            <TrendingUp size={16} /> Effectief Verbruik
                         </h4>
-                        {isCurrent && <button onClick={onAddAdhoc} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>+ Ad-hoc Toevoegen</button>}
                     </div>
                     <table className="formal-table">
                         <thead>
                             <tr>
                                 <th>Naam</th>
                                 <th>Herkomst</th>
-                                <th>Totaal Kost</th>
-                                <th>Gevraagd/Eff. Duur</th>
+                                <th>Start Week</th>
+                                <th>Aantal</th>
+                                <th>Eff. Duur</th>
                                 <th>Kost p/w</th>
-                                <th style={{ width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {stats.consumptionInWeek.length > 0 ? stats.consumptionInWeek.map(c => (
+                            {stats.consumptionInWeek.length > 0 ? stats.consumptionInWeek.map(c => {
+                                const isCompleted = c.completed && c.effDuration > 0;
+                                return (
                                 <tr key={c.id}>
                                     <td>{c.displayName}</td>
                                     <td>
                                         <span className={`badge ${c.sourceType === 'adhoc' ? 'badge-warning' : 'badge-success'}`}>
-                                            {c.sourceType === 'delivery' ? 'Levering' : 'Ad-hoc / Gift'}
+                                            {c.sourceType === 'delivery' ? 'Levering' : 'Ad-hoc'}
                                         </span>
                                     </td>
-                                    <td>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
+                                    <td>
+                                        <EditableCell 
+                                            value={c.startDate} 
+                                            type="date"
+                                            onSave={val => updateItem('consumption', c.id, { startDate: val })} 
+                                        />
+                                    </td>
+                                    <td><EditableCell value={c.qty} type="number" precision={0} onSave={val => updateItem('consumption', c.id, { qty: val })} /></td>
                                     <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <EditableCell value={c.estDuration} type="number" onSave={val => updateItem('consumption', c.id, { estDuration: val })} />
-                                        {" / "}
                                         <EditableCell
-                                            value={c.effDuration ?? '-'}
+                                            value={c.effDuration ?? '---'}
                                             type={c.effDuration ? 'number' : 'text'}
-                                            onSave={val => updateItem('consumption', c.id, { effDuration: val === '-' ? null : parseFloat(val), completed: val !== '-' })}
-                                        /> w
-                                        {!c.completed && (
+                                            precision={0}
+                                            suffix=" w"
+                                            onSave={val => {
+                                                const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
+                                                updateItem('consumption', c.id, { 
+                                                    effDuration: isEmpty ? null : parseFloat(val), 
+                                                    completed: !isEmpty 
+                                                });
+                                            }}
+                                        />
+                                        {!isCompleted ? (
                                             <button
                                                 onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
                                                 className="badge badge-danger"
                                                 style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem' }}
                                             >
-                                                MELD OP
+                                                OP
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
+                                                className="badge badge-warning"
+                                                title="Heropen item (niet op)"
+                                                style={{ border: 'none', cursor: 'pointer', padding: '4px', marginLeft: '0.5rem', display: 'flex', alignItems: 'center' }}
+                                            >
+                                                <RotateCcw size={14} />
                                             </button>
                                         )}
                                     </td>
-                                    <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
                                     <td>
-                                        <button 
-                                            onClick={() => deleteItem('consumption', c.id)}
-                                            style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
-                                            title="Verwijder verbruik"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                            <strong>€{c.weeklyCost.toFixed(2)}</strong>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                aankoop: €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
+                                            </span>
+                                        </div>
                                     </td>
                                 </tr>
-                            )) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
+                            )}) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
                         </tbody>
                     </table>
                 </section>
+
+                {/* 4. Voorraad Evolutie */}
+                {stats.inventoryAtEnd && stats.inventoryAtEnd.length > 0 && (
+                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0.7rem' }}>
+                            <Package size={16} /> Voorziene voorraad (Einde Week)
+                        </h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem' }}>
+                            {stats.inventoryAtEnd.map((item, idx) => (
+                                <div key={idx} className="glass-panel" style={{ padding: '4px 12px', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {item.name}: <strong style={{ color: 'var(--accent-color)' }}>{item.stock}</strong>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
             </div>
         </div>
     );
@@ -247,6 +436,7 @@ WeeklyCard.propTypes = {
             deliveryTotal: PropTypes.number.isRequired,
             deliveries: PropTypes.array.isRequired,
             consumptionInWeek: PropTypes.array.isRequired,
+            inventoryAtEnd: PropTypes.array.isRequired,
         }).isRequired,
     }).isRequired,
     onAddAdhoc: PropTypes.func.isRequired,

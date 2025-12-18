@@ -3,6 +3,11 @@ export const parseWeekId = (weekId) => {
     return { year, week };
 };
 
+export const getAbsoluteWeek = (weekId) => {
+    const { year, week } = parseWeekId(weekId);
+    return year * 53 + week;
+};
+
 export const isWeekInRange = (targetWeekId, startWeekId, durationWeeks) => {
     const target = parseWeekId(targetWeekId);
     const start = parseWeekId(startWeekId);
@@ -33,6 +38,21 @@ export const getDateOfTuesday = (weekId) => {
     tuesday.setDate(ISOweekStart.getDate() + 1);
 
     return tuesday.toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit' });
+};
+
+export const getISODateOfTuesday = (weekId) => {
+    const { year, week } = parseWeekId(weekId);
+    const simple = new Date(year, 0, 1 + (week - 1) * 7);
+    const dayOfWeek = simple.getDay();
+    const ISOweekStart = simple;
+    if (dayOfWeek <= 4) {
+        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+    } else {
+        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+    }
+    const tuesday = new Date(ISOweekStart);
+    tuesday.setDate(ISOweekStart.getDate() + 1);
+    return tuesday.toISOString().split('T')[0];
 };
 
 export const getWeekIdFromDate = (dateInput) => {
