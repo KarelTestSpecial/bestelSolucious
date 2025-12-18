@@ -10,43 +10,36 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }) => {
-    // State
-    const [products, setProducts] = useState([]);
-    const [orders, setOrders] = useState([]);
-    const [stock, setStock] = useState([]); // Represents all StockItems
+    // We gebruiken één groot object voor alle data om het simpel te houden
+    const [activeData, setActiveData] = useState({
+        products: [],
+        orders: [],
+        deliveries: [],
+        consumption: [] // Dit verving 'stock' in de oude code
+    });
+    const [archive] = useState([]); // Voor later
     const [isLoading, setIsLoading] = useState(true);
 
     // Initial data fetch
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            // We halen alles in 1 keer op via ons nieuwe endpoint
+            const res = await fetch('/api/full-data');
+            const data = await res.json();
+            setActiveData(data);
+        } catch (error) {
+            console.error("Failed to fetch initial data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const [productsRes, ordersRes, stockRes] = await Promise.all([
-                    fetch('/api/products'),
-                    fetch('/api/orders'),
-                    fetch('/api/stockitems')
-                ]);
-
-                const productsData = await productsRes.json();
-                const ordersData = await ordersRes.json();
-                const stockData = await stockRes.json();
-
-                setProducts(productsData);
-                setOrders(ordersData);
-                setStock(stockData);
-
-            } catch (error) {
-                console.error("Failed to fetch initial data", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchData();
     }, []);
 
     // --- Helpers ---
-
     const getCurrentWeekId = () => {
         const now = new Date();
         const onejan = new Date(now.getFullYear(), 0, 1);
@@ -65,64 +58,59 @@ export const AppProvider = ({ children }) => {
     // --- Actions ---
 
     const addOrder = async (order) => {
-        try {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(order),
-            });
-            const newOrder = await response.json();
-            setOrders(prev => [newOrder, ...prev]);
-        } catch (error) {
-            console.error('Failed to add order:', error);
-        }
+        await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(order),
+        });
+        fetchData(); // Refresh data
     };
 
     const confirmDelivery = async (delivery) => {
-        try {
-            await fetch('/api/deliveries', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(delivery),
-            });
-            // Re-fetch orders and stock to update status and inventory
-            const [ordersRes, stockRes] = await Promise.all([
-                fetch('/api/orders'),
-                fetch('/api/stockitems')
-            ]);
-            const ordersData = await ordersRes.json();
-            const stockData = await stockRes.json();
-            setOrders(ordersData);
-            setStock(stockData);
-        } catch (error) {
-            console.error('Failed to confirm delivery:', error);
-        }
+        await fetch('/api/deliveries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delivery),
+        });
+        fetchData();
     };
 
-    const consumeStockItem = async (stockItemId) => {
-        try {
-            await fetch(`/api/stockitems/${stockItemId}/consume`, {
+    // DEZE ONTBRAK IN JOUW CODE:
+    const registerConsumption = async (consumptionItem) => {
+        await fetch('/api/consumption', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(consumptionItem),
+        });
+        fetchData();
+    };
+
+    const updateItem = async (type, id, updates) => {
+        // Simpele update logica voor nu, voornamelijk voor consumption status
+        if(type === 'consumption') {
+            await fetch(`/api/consumption/${id}`, {
                 method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
             });
-            // Re-fetch stock to update inventory
-            const stockRes = await fetch('/api/stockitems');
-            const stockData = await stockRes.json();
-            setStock(stockData);
-        } catch (error) {
-            console.error('Failed to consume item:', error);
+            fetchData();
         }
     };
 
     const value = {
-        products,
-        orders,
-        stock,
+        activeData,
+        archive,
         isLoading,
         addOrder,
         confirmDelivery,
-        consumeStockItem,
+        registerConsumption,
+        updateItem,
         getCurrentWeekId,
         getRelativeWeekId,
+        // Mock functions for export/import to prevent crashes
+        exportData: () => console.log("Export not implemented yet"),
+        importData: () => console.log("Import not implemented yet"),
+        addBulkData: () => console.log("Bulk not implemented yet")
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

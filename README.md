@@ -13,13 +13,12 @@ Welkom bij de Bestel & Voorraad Tracker! Deze applicatie is ontworpen om u te he
 4.  [Belangrijkste Taken](#belangrijkste-taken)
     *   [Een Nieuwe Bestelling Plaatsen](#een-nieuwe-bestelling-plaatsen)
     *   [Een Levering Bevestigen](#een-levering-bevestigen)
-    *   [Een Ad-hoc Levering of Gift Registreren](#een-ad-hoc-levering-of-gift-registreren)
 
 ---
 
 ## Installatie
 
-Deze applicatie is ontworpen om lokaal op uw computer te draaien. Volg deze stappen om alles correct in te stellen. U hoeft dit maar één keer te doen.
+Deze applicatie is ontworpen om lokaal op uw computer te draaien. Volg deze stappen om alles correct in te stellen. **U hoeft dit maar één keer te doen.**
 
 **Vereisten:** U heeft `node.js` en `pnpm` nodig. Als u een Chromebook met een Linux-container gebruikt, zijn deze waarschijnlijk al geïnstalleerd.
 
@@ -29,24 +28,34 @@ Open een terminal en voer de volgende commando's uit in de map waar u de code he
     ```bash
     pnpm install
     ```
-2.  **Maak de lokale database aan:** Dit commando zet de database op en maakt de nodige tabellen aan.
+2.  **Installeer extra server-pakketten:**
     ```bash
-    pnpm exec prisma migrate dev --name init
+    pnpm add express cors
+    ```
+3.  **Maak de lokale database aan en synchroniseer:** Dit commando zet de database op basis van het schema.
+    ```bash
+    pnpm exec prisma db push
+    ```
+4.  **Genereer de Prisma-client:** Dit zorgt ervoor dat de server met de database kan praten.
+    ```bash
+    pnpm exec prisma generate
     ```
 
 Dat is alles! De applicatie is nu klaar voor gebruik.
 
 ## Hoe de Applicatie te Starten
 
-Elke keer dat u de applicatie wilt gebruiken, volgt u deze stappen:
+Elke keer dat u de applicatie wilt gebruiken, volgt u deze stappen. U heeft **twee terminals** nodig die u tegelijk open laat.
 
-1.  **Start de backend server:** Open een terminal in de projectmap en voer uit:
+1.  **Start de backend server (Terminal 1):**
+    Open een terminal in de projectmap en voer uit:
     ```bash
     node server/index.js
     ```
-    Laat deze terminal open; dit is uw server.
+    Laat deze terminal open. U zult zien staan: `Server draait op http://localhost:3000`.
 
-2.  **Start de frontend (de gebruikersinterface):** Open een *tweede* terminal in dezelfde projectmap en voer uit:
+2.  **Start de frontend (Terminal 2):**
+    Open een *tweede* terminal in dezelfde projectmap en voer uit:
     ```bash
     pnpm dev
     ```
@@ -57,16 +66,16 @@ Elke keer dat u de applicatie wilt gebruiken, volgt u deze stappen:
 De applicatie heeft vier hoofdschermen, toegankelijk via de knoppen bovenaan.
 
 ### Dashboard
-Dit is uw hoofdscherm. Het geeft een overzicht van uw recente bestellingen en leveringen. Van hieruit kunt u de meest voorkomende taken starten, zoals het plaatsen van een nieuwe bestelling.
+Dit is uw hoofdscherm. Het geeft een overzicht van uw recente bestellingen en leveringen. Van hieruit kunt u de meest voorkomende taken starten.
 
 ### Voorraad
-Dit scherm toont u een overzicht van alle producten die u momenteel op voorraad heeft. Het berekent de voorraad op basis van wat er is geleverd min wat er is verbruikt.
+Dit scherm toont u een overzicht van alle producten die u momenteel op voorraad heeft.
 
 ### Historiek
-Hier kunt u een volledig overzicht van al uw vroegere leveringen terugvinden. Dit is handig om te zien wat u in het verleden heeft ontvangen, inclusief ad-hoc leveringen.
+Hier kunt u een volledig overzicht van al uw vroegere leveringen terugvinden.
 
 ### Beheer
-Op dit scherm kunt u uw data beheren. U kunt een volledige back-up van uw gegevens exporteren naar een `JSON`-bestand, of een eerdere back-up importeren.
+Op dit scherm kunt u uw data beheren (bijv. back-ups maken/importeren). *Deze functionaliteit is momenteel nog in ontwikkeling.*
 
 ## Belangrijkste Taken
 
@@ -74,19 +83,11 @@ Op dit scherm kunt u uw data beheren. U kunt een volledige back-up van uw gegeve
 1.  Ga naar het **Dashboard**.
 2.  Klik op de knop **"+ Nieuwe Bestelling"**.
 3.  Een formulier verschijnt. Vul de productnaam, de prijs per eenheid, het aantal en de week waarvoor u bestelt in.
-4.  Klik op **"Bestelling Toevoegen"**. De bestelling verschijnt nu in het overzicht.
+4.  Klik op **"Bestelling Toevoegen"**. De data wordt opgeslagen en het overzicht wordt vernieuwd.
 
 ### Een Levering Bevestigen
-Wanneer een bestelling is geleverd, moet u dit in het systeem bevestigen.
-
 1.  Ga naar het **Dashboard**.
 2.  Klik op de knop **"Levering Bevestigen"**.
 3.  Selecteer de bestelling die is geleverd uit de dropdown-lijst.
-4.  De gegevens van de bestelling worden automatisch ingevuld. U kunt deze aanpassen als de levering afwijkt (bijv. een andere prijs of een ander aantal).
-5.  Geef aan hoeveel weken u verwacht dat dit product meegaat. Dit helpt het systeem om de kosten per week te projecteren.
-6.  Klik op **"Bevestig Levering & Start Verbruik"**. De bestelling wordt nu gemarkeerd als geleverd en de items worden aan uw voorraad toegevoegd.
-
-### Een Ad-hoc Levering of Gift Registreren
-Als u een product ontvangt dat u niet heeft besteld (bijvoorbeeld een gift of iets uit een andere voorraad), kunt u dit ook registreren.
-
-*Momenteel wordt een ad-hoc levering op dezelfde manier geregistreerd als een normale levering, maar u selecteert geen bestelling. Deze functionaliteit zal in de toekomst verder worden uitgebreid.*
+4.  De gegevens worden automatisch ingevuld. Pas deze aan indien nodig.
+5.  Klik op **"Bevestig Levering & Start Verbruik"**. De levering wordt geregistreerd.
