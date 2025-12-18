@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Product {
+  id    String @id @default(uuid())
+  name  String @unique
+  stock Float  @default(0) // Caching van huidige voorraad
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  productId   String
+  name        String
+  price       Float
+  qty         Float
+  estDuration Float    @default(1)
+  weekId      String   // Bijv "2025-W01"
+  createdAt   DateTime @default(now())
+}
+
+model Delivery {
+  id          String   @id @default(uuid())
+  orderId     String?  // Nullable for Ad-hoc
+  productId   String
+  name        String
+  price       Float
+  qty         Float
+  estDuration Float    @default(1)
+  weekId      String
+  createdAt   DateTime @default(now())
+}
+
+model Consumption {
+  id          String   @id @default(uuid())
+  sourceId    String   // Link naar Delivery ID of willekeurige ID bij Ad-hoc
+  sourceType  String   // "delivery" of "adhoc"
+  name        String
+  qty         Float
+  cost        Float
+  startDate   String   // Week ID
+  estDuration Float    // Geschatte weken
+  effDuration Float?   // Effectieve weken (ingevuld bij completed)
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}

@@ -92,7 +92,7 @@ table {
 
 th,
 td {
-  padding: 1rem;
+  padding: 0.6rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
@@ -169,7 +169,7 @@ th {
 
 .formal-table th,
 .formal-table td {
-  padding: 0.6rem 0.5rem;
+  padding: 0.4rem 0.3rem;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

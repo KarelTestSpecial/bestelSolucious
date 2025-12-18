@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const AppContext = createContext();
 
@@ -9,37 +10,45 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }) => {
-    // Persistence Keys
-    const STORAGE_KEY = 'solucious_tracker_data';
-    const ARCHIVE_KEY = 'solucious_tracker_archive';
-
-    // State
-    const [activeData, setActiveData] = useState(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : {
-            orders: [], // { id, productId, price, qty, weekId }
-            deliveries: [], // { id, orderId, price, qty, weekId, variant }
-            consumption: [], // { id, sourceId, sourceType, qty, cost, startDate, estDuration, effDuration, completed }
-            products: [] // { id, name }
-        };
+    // We gebruiken één groot object voor alle data om het simpel te houden
+    const [activeData, setActiveData] = useState({
+        products: [],
+        orders: [],
+        deliveries: [],
+        consumption: [] // Dit verving 'stock' in de oude code
     });
+    const [archive] = useState([]); // Voor later
+    const [isLoading, setIsLoading] = useState(true);
+    const [undoStack, setUndoStack] = useState([]);
+    const [redoStack, setRedoStack] = useState([]);
 
-    const [archive, setArchive] = useState(() => {
-        const saved = localStorage.getItem(ARCHIVE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    });
+    // Helper to push current state to undo stack
+    const pushToUndoStack = () => {
+        // We limit the stack size to 20 for memory efficiency
+        setUndoStack(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(activeData))]);
+        setRedoStack([]); // Clear redo stack on new action
+    };
 
-    // Sync with LocalStorage
+    // Initial data fetch
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            // We halen alles in 1 keer op via ons nieuwe endpoint
+            const res = await fetch('/api/full-data');
+            const data = await res.json();
+            setActiveData(data);
+        } catch (error) {
+            console.error("Failed to fetch initial data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(activeData));
-    }, [activeData]);
-
-    useEffect(() => {
-        localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive));
-    }, [archive]);
+        fetchData();
+    }, []);
 
     // --- Helpers ---
-
     const getCurrentWeekId = () => {
         const now = new Date();
         const onejan = new Date(now.getFullYear(), 0, 1);
@@ -57,98 +66,225 @@ export const AppProvider = ({ children }) => {
 
     // --- Actions ---
 
-    const addOrder = (order) => {
-        setActiveData(prev => ({
-            ...prev,
-            orders: [...prev.orders, { ...order, id: crypto.randomUUID() }]
-        }));
-    };
-
-    const confirmDelivery = (delivery) => {
-        setActiveData(prev => {
-            const newDelivery = { ...delivery, id: crypto.randomUUID() };
-            return {
-                ...prev,
-                deliveries: [...prev.deliveries, newDelivery]
-            };
+    const addOrder = async (order) => {
+        pushToUndoStack();
+        await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(order),
         });
+        fetchData(); // Refresh data
     };
 
-    const registerConsumption = (item) => {
-        setActiveData(prev => ({
-            ...prev,
-            consumption: [...prev.consumption, { ...item, id: crypto.randomUUID(), completed: false }]
-        }));
+    const confirmDelivery = async (delivery) => {
+        pushToUndoStack();
+        await fetch('/api/deliveries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delivery),
+        });
+        fetchData();
     };
 
-    const updateConsumption = (id, updates) => {
-        setActiveData(prev => ({
-            ...prev,
-            consumption: prev.consumption.map(c => c.id === id ? { ...c, ...updates } : c)
-        }));
+    const confirmBulkDeliveries = async (deliveries) => {
+        pushToUndoStack();
+        for (const { delivery, consumption } of deliveries) {
+            await fetch('/api/deliveries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(delivery),
+            });
+            if (consumption) {
+                await fetch('/api/consumption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(consumption),
+                });
+            }
+        }
+        fetchData();
     };
 
-    // --- Archiving Logic ---
-
-    const archiveCompletedData = () => {
-        const currentWeek = getCurrentWeekId();
-        // Logic: If consumption is completed AND was completed before currentWeek - 1, archive it.
-        // For now, let's keep it simple: manual trigger or automatic check.
+    const registerConsumption = async (consumptionItem) => {
+        pushToUndoStack();
+        await fetch('/api/consumption', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(consumptionItem),
+        });
+        fetchData();
     };
 
-    const exportData = () => {
-        const fullData = { active: activeData, archive };
-        const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bestel-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
+    const addAdhocDelivery = async (delivery, consumption) => {
+        // Create delivery
+        await fetch('/api/deliveries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delivery),
+        });
+
+        // Create consumption linked to it
+        if (consumption) {
+            await fetch('/api/consumption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(consumption),
+            });
+        }
+        fetchData();
     };
 
-    const importData = (jsonData) => {
-        try {
-            const parsed = JSON.parse(jsonData);
-            if (parsed.active) setActiveData(parsed.active);
-            if (parsed.archive) setArchive(parsed.archive);
-        } catch (e) {
-            alert("Fout bij importeren van data.");
+    const updateItem = async (type, id, updates) => {
+        let endpoint = '';
+        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
+        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
+        if (type === 'order') endpoint = `/api/orders/${id}`;
+
+        if (endpoint) {
+            pushToUndoStack();
+            await fetch(endpoint, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            });
+            fetchData();
         }
     };
 
-    const addBulkData = (data) => {
-        setActiveData(prev => ({
-            ...prev,
-            products: [...prev.products, ...data.products],
-            deliveries: [...prev.deliveries, ...data.deliveries],
-            consumption: [...prev.consumption, ...data.consumption]
-        }));
+    const deleteItem = async (type, id) => {
+        let endpoint = '';
+        if (type === 'order') endpoint = `/api/orders/${id}`;
+        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
+        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
+
+        if (endpoint) {
+            pushToUndoStack();
+            await fetch(endpoint, { method: 'DELETE' });
+            fetchData();
+        }
     };
 
-    const updateItem = (type, id, updates) => {
-        setActiveData(prev => {
-            const listKey = type === 'order' ? 'orders' : type === 'delivery' ? 'deliveries' : 'consumption';
-            return {
-                ...prev,
-                [listKey]: prev[listKey].map(item => item.id === id ? { ...item, ...updates } : item)
-            };
-        });
+    const addBulkOrders = async (weekId, orders) => {
+        try {
+            pushToUndoStack();
+            await fetch('/api/orders/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weekId, orders }),
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Bulk import failed", error);
+            throw error; // Laat component error afhandelen
+        }
+    };
+
+    const exportData = () => {
+        const dataStr = JSON.stringify(activeData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `bestel-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+    };
+
+    const importData = async (jsonData, skipUndo = false) => {
+        try {
+            if (!skipUndo) pushToUndoStack();
+            
+            // For restore, we first need to clear the current state to ensure a clean slate,
+            // otherwise 'restore' (which uses upsert) won't remove deleted items.
+            await fetch('/api/clear', { method: 'DELETE' });
+
+            const res = await fetch('/api/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData),
+            });
+            const result = await res.json();
+            if (result.success) {
+                fetchData();
+                return true;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error("Import failed:", error);
+            alert("Herstel mislukt: " + error.message);
+            return false;
+        }
+    };
+
+    const undo = async () => {
+        if (undoStack.length === 0) return;
+        
+        const prevState = undoStack[undoStack.length - 1];
+        const currentState = JSON.parse(JSON.stringify(activeData));
+        
+        setUndoStack(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, currentState]);
+        
+        await importData(prevState, true);
+    };
+
+    const redo = async () => {
+        if (redoStack.length === 0) return;
+        
+        const nextState = redoStack[redoStack.length - 1];
+        const currentState = JSON.parse(JSON.stringify(activeData));
+        
+        setRedoStack(prev => prev.slice(0, -1));
+        setUndoStack(prev => [...prev, currentState]);
+        
+        await importData(nextState, true);
+    };
+
+    const clearDatabase = async () => {
+        try {
+            pushToUndoStack();
+            const res = await fetch('/api/clear', { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                fetchData();
+                return true;
+            }
+            throw new Error(result.error);
+        } catch (error) {
+            console.error("Clear failed:", error);
+            alert("Wissen mislukt: " + error.message);
+            return false;
+        }
     };
 
     const value = {
         activeData,
         archive,
+        isLoading,
+        canUndo: undoStack.length > 0,
+        canRedo: redoStack.length > 0,
+        undo,
+        redo,
         addOrder,
+        addBulkOrders,
         confirmDelivery,
+        confirmBulkDeliveries,
         registerConsumption,
-        updateConsumption,
+        addAdhocDelivery,
         updateItem,
-        addBulkData,
+        deleteItem,
         getCurrentWeekId,
         getRelativeWeekId,
         exportData,
-        importData
+        importData,
+        clearDatabase,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+};
+
+AppProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };

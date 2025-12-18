@@ -3,20 +3,26 @@ import { AppProvider } from './context/AppContext';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import DataManager from './components/DataManager';
+import HistoryView from './components/HistoryView';
 import './index.css';
-import { LayoutDashboard, Archive, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Archive, Settings, History, Undo2, Redo2 } from 'lucide-react';
+import { useAppContext } from './context/AppContext';
 
-function App() {
+function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const { undo, redo, canUndo, canRedo } = useAppContext();
 
     return (
-        <AppProvider>
-            <nav className="glass-panel" style={{ margin: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+        <>
+            <nav className="glass-panel" style={{ margin: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
                 <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LayoutDashboard size={18} /> Dashboard
                 </button>
                 <button onClick={() => setActiveTab('inventory')} className={activeTab === 'inventory' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Archive size={18} /> Voorraad
+                    <Archive size={18} /> Voorziene voorraad
+                </button>
+                <button onClick={() => setActiveTab('history')} className={activeTab === 'history' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <History size={18} /> Historiek
                 </button>
                 <button onClick={() => setActiveTab('data')} className={activeTab === 'data' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Settings size={18} /> Beheer
@@ -26,8 +32,17 @@ function App() {
             <main className="container animate-fade-in">
                 {activeTab === 'dashboard' && <Dashboard />}
                 {activeTab === 'inventory' && <Inventory />}
+                {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'data' && <DataManager />}
             </main>
+        </>
+    );
+}
+
+function App() {
+    return (
+        <AppProvider>
+            <AppContent />
         </AppProvider>
     );
 }

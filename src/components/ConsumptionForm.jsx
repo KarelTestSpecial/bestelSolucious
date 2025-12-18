@@ -1,36 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
+import { getWeekIdFromDate } from '../utils/weekUtils';
 import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const ConsumptionForm = ({ onClose }) => {
-    const { registerConsumption, getCurrentWeekId } = useAppContext();
+    const { addAdhocDelivery, getCurrentWeekId } = useAppContext();
+
+    const getToday = () => new Date().toISOString().split('T')[0];
+    const [date, setDate] = useState(getToday());
+
     const [formData, setFormData] = useState({
         name: '',
         cost: '',
         qty: 1,
+        estDuration: 1,
         weekId: getCurrentWeekId(),
         source: 'Schenking/Stock'
     });
 
+    useEffect(() => {
+        if (date) {
+            setFormData(prev => ({ ...prev, weekId: getWeekIdFromDate(date) }));
+        }
+    }, [date]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        registerConsumption({
-            sourceId: crypto.randomUUID(), // Ad-hoc has its own unique ID
+        const id = crypto.randomUUID();
+        const totalCost = parseFloat(formData.cost);
+        const qty = parseInt(formData.qty);
+        const unitPrice = totalCost / qty;
+
+        addAdhocDelivery({
+            id: id,
+            orderId: null, // No order
+            productId: 'ADHOC-' + id, // Dummy product ID
+            name: formData.name,
+            price: unitPrice,
+            qty: qty,
+            weekId: formData.weekId
+        }, {
+            sourceId: id,
             sourceType: 'adhoc',
             name: formData.name,
-            qty: parseInt(formData.qty),
-            cost: parseFloat(formData.cost),
+            qty: qty,
+            cost: totalCost,
             startDate: formData.weekId,
-            estDuration: 1, // Ad-hoc is usually for the same week
-            effDuration: 1,
-            completed: true
+            estDuration: parseInt(formData.estDuration),
+            effDuration: null,
+            completed: false
         });
 
         onClose();
     };
 
-    return (
+    return createPortal(
         <div className="modal-overlay" style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
@@ -71,19 +98,46 @@ const ConsumptionForm = ({ onClose }) => {
                         </div>
                     </div>
 
-                    <label>Week van Verbruik</label>
-                    <input
-                        className="input-field"
-                        value={formData.weekId}
-                        onChange={e => setFormData({ ...formData, weekId: e.target.value })}
-                        required
-                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                         <div>
+                            <label>Verwachte Duur (weken)</label>
+                            <input
+                                className="input-field" type="number" min="1"
+                                value={formData.estDuration}
+                                onChange={e => setFormData({ ...formData, estDuration: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label>Datum van Verbruik</label>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                    className="input-field"
+                                    type="date"
+                                    value={date}
+                                    onChange={e => setDate(e.target.value)}
+                                    onFocus={(e) => e.target.showPicker?.()}
+                                    onClick={(e) => e.target.showPicker?.()}
+                                    required
+                                    style={{ marginBottom: 0, flex: 1 }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: '0.2rem' }}>
+                        Week: <strong>{formData.weekId}</strong>
+                    </p>
 
                     <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Verbruik</button>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
+};
+
+ConsumptionForm.propTypes = {
+    onClose: PropTypes.func.isRequired,
 };
 
 export default ConsumptionForm;
