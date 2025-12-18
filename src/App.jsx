@@ -1,0 +1,35 @@
+import React, { useState } from 'react';
+import { AppProvider } from './context/AppContext';
+import Dashboard from './components/Dashboard';
+import Inventory from './components/Inventory';
+import DataManager from './components/DataManager';
+import './index.css';
+import { LayoutDashboard, Archive, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+
+function App() {
+    const [activeTab, setActiveTab] = useState('dashboard');
+
+    return (
+        <AppProvider>
+            <nav className="glass-panel" style={{ margin: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <LayoutDashboard size={18} /> Dashboard
+                </button>
+                <button onClick={() => setActiveTab('inventory')} className={activeTab === 'inventory' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Archive size={18} /> Voorraad
+                </button>
+                <button onClick={() => setActiveTab('data')} className={activeTab === 'data' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Settings size={18} /> Beheer
+                </button>
+            </nav>
+
+            <main className="container animate-fade-in">
+                {activeTab === 'dashboard' && <Dashboard />}
+                {activeTab === 'inventory' && <Inventory />}
+                {activeTab === 'data' && <DataManager />}
+            </main>
+        </AppProvider>
+    );
+}
+
+export default App;
