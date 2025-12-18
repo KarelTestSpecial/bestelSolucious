@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const AppContext = createContext();
 
@@ -9,34 +10,40 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }) => {
-    // Persistence Keys
-    const STORAGE_KEY = 'solucious_tracker_data';
-    const ARCHIVE_KEY = 'solucious_tracker_archive';
-
     // State
-    const [activeData, setActiveData] = useState(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : {
-            orders: [], // { id, productId, price, qty, weekId }
-            deliveries: [], // { id, orderId, price, qty, weekId, variant }
-            consumption: [], // { id, sourceId, sourceType, qty, cost, startDate, estDuration, effDuration, completed }
-            products: [] // { id, name }
+    const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [stock, setStock] = useState([]); // Represents all StockItems
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Initial data fetch
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const [productsRes, ordersRes, stockRes] = await Promise.all([
+                    fetch('/api/products'),
+                    fetch('/api/orders'),
+                    fetch('/api/stockitems')
+                ]);
+
+                const productsData = await productsRes.json();
+                const ordersData = await ordersRes.json();
+                const stockData = await stockRes.json();
+
+                setProducts(productsData);
+                setOrders(ordersData);
+                setStock(stockData);
+
+            } catch (error) {
+                console.error("Failed to fetch initial data", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
-    });
 
-    const [archive, setArchive] = useState(() => {
-        const saved = localStorage.getItem(ARCHIVE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    });
-
-    // Sync with LocalStorage
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(activeData));
-    }, [activeData]);
-
-    useEffect(() => {
-        localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive));
-    }, [archive]);
+        fetchData();
+    }, []);
 
     // --- Helpers ---
 
@@ -57,98 +64,70 @@ export const AppProvider = ({ children }) => {
 
     // --- Actions ---
 
-    const addOrder = (order) => {
-        setActiveData(prev => ({
-            ...prev,
-            orders: [...prev.orders, { ...order, id: crypto.randomUUID() }]
-        }));
-    };
-
-    const confirmDelivery = (delivery) => {
-        setActiveData(prev => {
-            const newDelivery = { ...delivery, id: crypto.randomUUID() };
-            return {
-                ...prev,
-                deliveries: [...prev.deliveries, newDelivery]
-            };
-        });
-    };
-
-    const registerConsumption = (item) => {
-        setActiveData(prev => ({
-            ...prev,
-            consumption: [...prev.consumption, { ...item, id: crypto.randomUUID(), completed: false }]
-        }));
-    };
-
-    const updateConsumption = (id, updates) => {
-        setActiveData(prev => ({
-            ...prev,
-            consumption: prev.consumption.map(c => c.id === id ? { ...c, ...updates } : c)
-        }));
-    };
-
-    // --- Archiving Logic ---
-
-    const archiveCompletedData = () => {
-        const currentWeek = getCurrentWeekId();
-        // Logic: If consumption is completed AND was completed before currentWeek - 1, archive it.
-        // For now, let's keep it simple: manual trigger or automatic check.
-    };
-
-    const exportData = () => {
-        const fullData = { active: activeData, archive };
-        const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bestel-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-    };
-
-    const importData = (jsonData) => {
+    const addOrder = async (order) => {
         try {
-            const parsed = JSON.parse(jsonData);
-            if (parsed.active) setActiveData(parsed.active);
-            if (parsed.archive) setArchive(parsed.archive);
-        } catch (e) {
-            alert("Fout bij importeren van data.");
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(order),
+            });
+            const newOrder = await response.json();
+            setOrders(prev => [newOrder, ...prev]);
+        } catch (error) {
+            console.error('Failed to add order:', error);
         }
     };
 
-    const addBulkData = (data) => {
-        setActiveData(prev => ({
-            ...prev,
-            products: [...prev.products, ...data.products],
-            deliveries: [...prev.deliveries, ...data.deliveries],
-            consumption: [...prev.consumption, ...data.consumption]
-        }));
+    const confirmDelivery = async (delivery) => {
+        try {
+            await fetch('/api/deliveries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(delivery),
+            });
+            // Re-fetch orders and stock to update status and inventory
+            const [ordersRes, stockRes] = await Promise.all([
+                fetch('/api/orders'),
+                fetch('/api/stockitems')
+            ]);
+            const ordersData = await ordersRes.json();
+            const stockData = await stockRes.json();
+            setOrders(ordersData);
+            setStock(stockData);
+        } catch (error) {
+            console.error('Failed to confirm delivery:', error);
+        }
     };
 
-    const updateItem = (type, id, updates) => {
-        setActiveData(prev => {
-            const listKey = type === 'order' ? 'orders' : type === 'delivery' ? 'deliveries' : 'consumption';
-            return {
-                ...prev,
-                [listKey]: prev[listKey].map(item => item.id === id ? { ...item, ...updates } : item)
-            };
-        });
+    const consumeStockItem = async (stockItemId) => {
+        try {
+            await fetch(`/api/stockitems/${stockItemId}/consume`, {
+                method: 'PATCH',
+            });
+            // Re-fetch stock to update inventory
+            const stockRes = await fetch('/api/stockitems');
+            const stockData = await stockRes.json();
+            setStock(stockData);
+        } catch (error) {
+            console.error('Failed to consume item:', error);
+        }
     };
 
     const value = {
-        activeData,
-        archive,
+        products,
+        orders,
+        stock,
+        isLoading,
         addOrder,
         confirmDelivery,
-        registerConsumption,
-        updateConsumption,
-        updateItem,
-        addBulkData,
+        consumeStockItem,
         getCurrentWeekId,
         getRelativeWeekId,
-        exportData,
-        importData
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+};
+
+AppProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };

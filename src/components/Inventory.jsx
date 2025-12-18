@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Package, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Package } from 'lucide-react';
 
 const Inventory = () => {
     const { activeData } = useAppContext();

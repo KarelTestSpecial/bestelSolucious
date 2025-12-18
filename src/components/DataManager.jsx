@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Download, Upload, Trash2, Database, FileSpreadsheet } from 'lucide-react';
+import { Download, Trash2, Database, FileSpreadsheet } from 'lucide-react';
 import { parseSpreadsheetTSV } from '../utils/dataParser';
 
 const DataManager = () => {

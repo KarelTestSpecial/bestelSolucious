@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getDateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Zap } from 'lucide-react';
+import { Plus, ShoppingCart, Truck, TrendingUp } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
+import PropTypes from 'prop-types';
 
 const Dashboard = () => {
-    const { getCurrentWeekId } = useAppContext();
     const { getTimeline } = useWeeklyStats();
     const [activeModal, setActiveModal] = useState(null);
 
@@ -70,8 +70,15 @@ const EditableCell = ({ value, onSave, type = 'text', suffix = '' }) => {
     );
 };
 
+EditableCell.propTypes = {
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    onSave: PropTypes.func.isRequired,
+    type: PropTypes.string,
+    suffix: PropTypes.string,
+};
+
 const WeeklyCard = ({ data, onAddAdhoc }) => {
-    const { activeData, updateItem } = useAppContext();
+    const { updateItem } = useAppContext();
     const { weekId, offset, stats } = data;
     const isCurrent = offset === 0;
 
@@ -197,6 +204,22 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
             </div>
         </div>
     );
+};
+
+WeeklyCard.propTypes = {
+    data: PropTypes.shape({
+        weekId: PropTypes.string.isRequired,
+        offset: PropTypes.number.isRequired,
+        stats: PropTypes.shape({
+            totalConsumptionCost: PropTypes.number.isRequired,
+            orderTotal: PropTypes.number.isRequired,
+            orders: PropTypes.array.isRequired,
+            deliveryTotal: PropTypes.number.isRequired,
+            deliveries: PropTypes.array.isRequired,
+            consumptionInWeek: PropTypes.array.isRequired,
+        }).isRequired,
+    }).isRequired,
+    onAddAdhoc: PropTypes.func.isRequired,
 };
 
 export default Dashboard;

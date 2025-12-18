@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { X, Search } from 'lucide-react';
+import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const OrderForm = ({ onClose }) => {
-    const { addOrder, activeData, getCurrentWeekId } = useAppContext();
+    const { addOrder, getCurrentWeekId } = useAppContext();
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -86,6 +87,10 @@ const OrderForm = ({ onClose }) => {
             </div>
         </div>
     );
+};
+
+OrderForm.propTypes = {
+    onClose: PropTypes.func.isRequired,
 };
 
 export default OrderForm;

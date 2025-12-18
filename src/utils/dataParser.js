@@ -15,7 +15,7 @@ export const parseSpreadsheetTSV = (tsvContent, mode = 'delivery') => {
 
         const dateMatch = line.match(/^(\d{1,2})\/(\d{1,2})/);
         if (dateMatch) {
-            const [_, day, month] = dateMatch;
+            const [, day, month] = dateMatch;
             const date = new Date(currentYear, parseInt(month) - 1, parseInt(day));
             const onejan = new Date(currentYear, 0, 1);
             const week = Math.ceil((((date.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7);

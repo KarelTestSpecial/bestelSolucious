@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const ConsumptionForm = ({ onClose }) => {
     const { registerConsumption, getCurrentWeekId } = useAppContext();
@@ -84,6 +85,10 @@ const ConsumptionForm = ({ onClose }) => {
             </div>
         </div>
     );
+};
+
+ConsumptionForm.propTypes = {
+    onClose: PropTypes.func.isRequired,
 };
 
 export default ConsumptionForm;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { X, AlertCircle } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const DeliveryForm = ({ onClose }) => {
   const { activeData, confirmDelivery, registerConsumption, getCurrentWeekId } = useAppContext();
@@ -134,6 +135,10 @@ const DeliveryForm = ({ onClose }) => {
       </div>
     </div>
   );
+};
+
+DeliveryForm.propTypes = {
+    onClose: PropTypes.func.isRequired,
 };
 
 export default DeliveryForm;
