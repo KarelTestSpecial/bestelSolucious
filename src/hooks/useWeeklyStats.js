@@ -128,14 +128,26 @@ export const useWeeklyStats = () => {
     };
 
     const getTimeline = () => {
-        return [0, 1, 2, 3, 4].map(offset => {
+        const timeline = [];
+        let previousInventoryAtEnd = [];
+
+        for (const offset of [0, 1, 2, 3, 4]) {
             const weekId = getRelativeWeekId(offset);
-            return {
+            const stats = getStatsForWeek(weekId);
+
+            timeline.push({
                 offset,
                 weekId,
-                stats: getStatsForWeek(weekId)
-            };
-        });
+                stats: {
+                    ...stats,
+                    inventoryAtStart: previousInventoryAtEnd
+                }
+            });
+
+            previousInventoryAtEnd = stats.inventoryAtEnd;
+        }
+
+        return timeline;
     };
 
     return { getTimeline, getStatsForWeek };

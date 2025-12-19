@@ -326,6 +326,22 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     </table>
                 </section>
 
+                {/* Voorraad (begin) */}
+                {stats.inventoryAtStart && stats.inventoryAtStart.length > 0 && (
+                    <section>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
+                            <Package size={16} /> Voorziene voorraad (Begin Week)
+                        </h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem', marginBottom: '1rem' }}>
+                            {stats.inventoryAtStart.map((item, idx) => (
+                                <div key={idx} className="glass-panel" style={{ padding: '4px 12px', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {item.name}: <strong style={{ color: 'var(--accent-color)' }}>{item.stock}</strong>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {/* 3. In Effectief Verbruik */}
                 <section>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
@@ -402,22 +418,6 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         </tbody>
                     </table>
                 </section>
-
-                {/* 4. Voorraad Evolutie */}
-                {stats.inventoryAtEnd && stats.inventoryAtEnd.length > 0 && (
-                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
-                            <Package size={16} /> Voorziene voorraad (Einde Week)
-                        </h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem' }}>
-                            {stats.inventoryAtEnd.map((item, idx) => (
-                                <div key={idx} className="glass-panel" style={{ padding: '4px 12px', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {item.name}: <strong style={{ color: 'var(--accent-color)' }}>{item.stock}</strong>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
             </div>
         </div>
     );
@@ -434,7 +434,8 @@ WeeklyCard.propTypes = {
             deliveryTotal: PropTypes.number.isRequired,
             deliveries: PropTypes.array.isRequired,
             consumptionInWeek: PropTypes.array.isRequired,
-            inventoryAtEnd: PropTypes.array.isRequired,
+            inventoryAtStart: PropTypes.array,
+            inventoryAtEnd: PropTypes.array,
         }).isRequired,
     }).isRequired,
     onAddAdhoc: PropTypes.func.isRequired,
