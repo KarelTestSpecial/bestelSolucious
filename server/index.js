@@ -54,8 +54,12 @@ app.post('/api/orders', async (req, res) => {
 
   const newOrder = await prisma.order.create({
     data: {
-      ...data,
-      estDuration: parseFloat(data.estDuration || 1)
+      name: data.name,
+      price: parseFloat(data.price),
+      qty: parseInt(data.qty),
+      weekId: data.weekId,
+      estDuration: parseFloat(data.estDuration || 1),
+      productId: product.id, // Gebruik de ID van het gevonden/gemaakte product
     }
   });
   res.json(newOrder);
