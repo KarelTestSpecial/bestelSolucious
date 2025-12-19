@@ -265,10 +265,10 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                             <tr>
                                 <th style={{ width: 'auto' }}>Naam</th>
                                 <th style={{ width: '120px' }}>Subtotaal (aankoop)</th>
-                                <th style={{ width: '130px' }}>Eff. Duur</th>
                                 <th style={{ width: '130px' }}>Voortgang</th>
                                 <th style={{ width: '110px' }}>Kost p/w</th>
                                 <th style={{ width: '140px' }}>Start Week</th>
+                                <th style={{ width: '80px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,25 +287,40 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                     <td>
                                         €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
                                     </td>
-                                    <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <td>
+                                        <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                            <span>{c.weeksSincePurchase}/</span>
+                                            <EditableCell
+                                                value={c.effDuration ?? (c.estDuration || '---')}
+                                                type={c.effDuration ? 'number' : 'text'}
+                                                precision={0}
+                                                suffix=" w"
+                                                onSave={val => {
+                                                    const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
+                                                    updateItem('consumption', c.id, {
+                                                        effDuration: isEmpty ? null : parseFloat(val),
+                                                        completed: !isEmpty
+                                                    });
+                                                }}
+                                            />
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>€{c.weeklyCost.toFixed(2)}</strong>
+                                    </td>
+                                    <td>
                                         <EditableCell
-                                            value={c.effDuration ?? (c.estDuration || '---')}
-                                            type={c.effDuration ? 'number' : 'text'}
-                                            precision={0}
-                                            suffix=" w"
-                                            onSave={val => {
-                                                const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
-                                                updateItem('consumption', c.id, { 
-                                                    effDuration: isEmpty ? null : parseFloat(val), 
-                                                    completed: !isEmpty 
-                                                });
-                                            }}
+                                            value={c.startDate}
+                                            type="date"
+                                            onSave={val => updateItem('consumption', c.id, { startDate: val })}
                                         />
+                                    </td>
+                                    <td>
                                         {!isCompleted ? (
                                             <button
                                                 onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
                                                 className="badge badge-danger"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem' }}
+                                                style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
                                             >
                                                 OP
                                             </button>
@@ -314,26 +329,11 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                                 onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
                                                 className="badge badge-warning"
                                                 title="Heropen item (niet op)"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px', marginLeft: '0.5rem', display: 'flex', alignItems: 'center' }}
+                                                style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
                                             >
                                                 <RotateCcw size={14} />
                                             </button>
                                         )}
-                                    </td>
-                                    <td>
-                                        <span style={{ fontWeight: 'bold' }}>
-                                            {c.weeksSincePurchase}/{c.duration} w
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <strong>€{c.weeklyCost.toFixed(2)}</strong>
-                                    </td>
-                                    <td>
-                                        <EditableCell 
-                                            value={c.startDate} 
-                                            type="date"
-                                            onSave={val => updateItem('consumption', c.id, { startDate: val })} 
-                                        />
                                     </td>
                                 </tr>
                             )}) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
