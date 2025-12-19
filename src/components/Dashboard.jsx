@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2 } from 'lucide-react';
+import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2, ArrowUpCircle } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
@@ -161,13 +161,23 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        Totaal Besteld: <span style={{ color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</span>
+                    </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Geleverd: <span style={{ color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</span>
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
                     </div>
+                     <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
+                        title="Scroll naar boven"
+                    >
+                        <ArrowUpCircle size={22} />
+                    </button>
                 </div>
             </div>
 
@@ -316,23 +326,27 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         />
                                     </td>
                                     <td>
-                                        {!isCompleted ? (
-                                            <button
-                                                onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
-                                                className="badge badge-danger"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
-                                            >
-                                                OP
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
-                                                className="badge badge-warning"
-                                                title="Heropen item (niet op)"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                            >
-                                                <RotateCcw size={14} />
-                                            </button>
+                                        {isCurrent && (
+                                            <>
+                                                {!isCompleted ? (
+                                                    <button
+                                                        onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
+                                                        className="badge badge-danger"
+                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                                    >
+                                                        OP
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
+                                                        className="badge badge-warning"
+                                                        title="Heropen item (niet op)"
+                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <RotateCcw size={14} />
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </td>
                                 </tr>
