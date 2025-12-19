@@ -1,8 +1,8 @@
 import { useAppContext } from '../context/AppContext';
-import { getAbsoluteWeek } from '../utils/weekUtils';
+import { isWeekInRange, parseWeekId, getAbsoluteWeek } from '../utils/weekUtils';
 
 export const useWeeklyStats = () => {
-    const { activeData, getRelativeWeekId } = useAppContext();
+    const { activeData, getRelativeWeekId, getCurrentWeekId } = useAppContext();
 
     const getStatsForWeek = (weekId) => {
         const targetAbs = getAbsoluteWeek(weekId);
@@ -15,86 +15,30 @@ export const useWeeklyStats = () => {
         const deliveries = activeData.deliveries.filter(d => d.weekId === weekId);
         const deliveryTotal = deliveries.reduce((sum, d) => sum + (d.price * d.qty), 0);
 
-        // Effective consumption is now based on all deliveries that are in stock and "active" for the current week
-        const consumptionBySource = activeData.consumption
-            .filter(c => c.completed && c.sourceId)
-            .reduce((acc, c) => {
-                acc[c.sourceId] = (acc[c.sourceId] || 0) + c.qty;
-                return acc;
-            }, {});
+        const currentWeekId = getCurrentWeekId();
+        const currentAbs = getAbsoluteWeek(currentWeekId);
 
-        const consumptionFromDeliveries = activeData.deliveries
-            .map(d => {
-                const stock = d.qty - (consumptionBySource[d.id] || 0);
-                if (stock <= 0) return null;
+        // Enrich and filter consumption
+        const consumptionInWeek = activeData.consumption.map(c => {
+            let name = c.name || 'Onbekend';
+            if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
+                const delivery = activeData.deliveries.find(d => d.id === c.sourceId);
+                // We prefer the delivery name if it exists, as it might have been edited by the user
+                name = delivery ? delivery.name : (c.name || 'Item');
+            }
 
-                const startAbs = getAbsoluteWeek(d.weekId);
-                const explicitConsumption = activeData.consumption.find(c => c.sourceId === d.id);
+            let duration;
+            if (c.completed && c.effDuration) {
+                duration = c.effDuration;
+            } else {
+                const startAbs = getAbsoluteWeek(c.startDate);
+                // Duur groeit elke week zolang niet voltooid (start bij 1)
+                duration = Math.max(1, currentAbs - startAbs + 1);
+            }
 
-                const duration = (explicitConsumption && explicitConsumption.effDuration) ? explicitConsumption.effDuration : (d.estDuration || 1);
-                const endAbs = startAbs + duration - 1;
-
-                if (targetAbs < startAbs || targetAbs > endAbs) return null;
-
-                const completed = explicitConsumption ? explicitConsumption.completed : false;
-                if (completed) {
-                    const completedEndAbs = startAbs + (explicitConsumption.effDuration || 1) - 1;
-                    if (completedEndAbs < targetAbs) return null;
-                }
-
-                const cost = explicitConsumption ? explicitConsumption.cost : d.price * d.qty;
-                const weeklyCost = cost / duration;
-                const weeksSincePurchase = targetAbs - startAbs + 1;
-
-                return {
-                    id: explicitConsumption ? explicitConsumption.id : `implicit-${d.id}`,
-                    displayName: d.name || 'Geleverd Item',
-                    cost: cost,
-                    qty: d.qty,
-                    startDate: d.weekId,
-                    estDuration: d.estDuration,
-                    effDuration: explicitConsumption ? explicitConsumption.effDuration : null,
-                    completed: completed,
-                    weeklyCost: weeklyCost,
-                    weeksSincePurchase: weeksSincePurchase,
-                    duration: duration,
-                    sourceId: d.id,
-                };
-            })
-            .filter(Boolean);
-
-        const consumptionFromOrders = activeData.orders
-            .filter(o => !activeData.deliveries.some(d => d.orderId === o.id))
-            .map(o => {
-                const startAbs = getAbsoluteWeek(o.weekId);
-                const duration = o.estDuration || 1;
-                const endAbs = startAbs + duration - 1;
-
-                if (targetAbs < startAbs || targetAbs > endAbs) return null;
-
-                const cost = o.price * o.qty;
-                const weeklyCost = cost / duration;
-                const weeksSincePurchase = targetAbs - startAbs + 1;
-
-                return {
-                    id: `implicit-order-${o.id}`,
-                    displayName: o.name || 'Besteld Item',
-                    cost: cost,
-                    qty: o.qty,
-                    startDate: o.weekId,
-                    estDuration: o.estDuration,
-                    effDuration: null,
-                    completed: false,
-                    weeklyCost: weeklyCost,
-                    weeksSincePurchase: weeksSincePurchase,
-                    duration: duration,
-                    sourceId: o.id,
-                    isProjected: true
-                };
-            })
-            .filter(Boolean);
-
-        const consumptionInWeek = [...consumptionFromDeliveries, ...consumptionFromOrders];
+            const weeklyCost = c.cost / duration;
+            return { ...c, displayName: name, weeklyCost, duration };
+        }).filter(c => isWeekInRange(weekId, c.startDate, c.duration));
 
         const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + c.weeklyCost, 0);
 
@@ -184,26 +128,14 @@ export const useWeeklyStats = () => {
     };
 
     const getTimeline = () => {
-        const timeline = [];
-        let previousInventoryAtEnd = [];
-
-        for (const offset of [0, 1, 2, 3, 4]) {
+        return [0, 1, 2, 3, 4].map(offset => {
             const weekId = getRelativeWeekId(offset);
-            const stats = getStatsForWeek(weekId);
-
-            timeline.push({
+            return {
                 offset,
                 weekId,
-                stats: {
-                    ...stats,
-                    inventoryAtStart: previousInventoryAtEnd
-                }
-            });
-
-            previousInventoryAtEnd = stats.inventoryAtEnd;
-        }
-
-        return timeline;
+                stats: getStatsForWeek(weekId)
+            };
+        });
     };
 
     return { getTimeline, getStatsForWeek };

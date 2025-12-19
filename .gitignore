@@ -1,5 +1,2 @@
 node_modules/
 prisma/dev.db
-npm_output.log
-server.log
-server_debug.log
