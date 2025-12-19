@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Package, Undo2, Redo2 } from 'lucide-react';
+import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2, ArrowUpCircle } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
@@ -10,44 +10,10 @@ import PropTypes from 'prop-types';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
-    const { activeData, undo, redo, canUndo, canRedo } = useAppContext();
+    const { undo, redo, canUndo, canRedo } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
 
     const timeline = getTimeline();
-
-    // Bereken voorraad
-    const inventoryMap = activeData.products.map(product => {
-        const totalDelivered = activeData.deliveries
-            .filter(d => d.productId === product.id)
-            .reduce((sum, d) => sum + d.qty, 0);
-
-        const totalConsumed = activeData.consumption
-            .filter(c => {
-                if (!c.completed) return false;
-                if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
-                    const del = activeData.deliveries.find(d => d.id === c.sourceId);
-                    return del && del.productId === product.id;
-                }
-                return false;
-            })
-            .reduce((sum, c) => sum + c.qty, 0);
-
-        return {
-            ...product,
-            stock: totalDelivered - totalConsumed,
-            delivered: totalDelivered,
-            consumed: totalConsumed
-        };
-    }).map(item => {
-        // Gebruik de meest recente naam uit leveringen of bestellingen
-        const lastDelivery = [...activeData.deliveries].reverse().find(d => d.productId === item.id);
-        if (lastDelivery && lastDelivery.name) return { ...item, name: lastDelivery.name };
-        
-        const lastOrder = [...activeData.orders].reverse().find(o => o.productId === item.id);
-        if (lastOrder && lastOrder.name) return { ...item, name: lastOrder.name };
-        
-        return item;
-    }).filter(item => item.stock > 0);
 
     return (
         <div className="dashboard">
@@ -108,45 +74,6 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', borderTop: '4px solid var(--accent-color)' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <Package /> Huidige Voorziene voorraad
-                </h3>
-                <div className="table-container">
-                    <table className="formal-table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Status</th>
-                                <th>Geleverd</th>
-                                <th>Verbruikt (Op)</th>
-                                <th>Stock</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {inventoryMap.length === 0 ? (
-                                <tr><td colSpan="5" className="empty-text">Geen voorraad data</td></tr>
-                            ) : inventoryMap.map(item => (
-                                <tr key={item.id}>
-                                    <td><strong>{item.name}</strong></td>
-                                    <td>
-                                        {item.stock <= 0 ? (
-                                            <span className="badge badge-danger">OP</span>
-                                        ) : item.stock < 2 ? (
-                                            <span className="badge badge-warning">LAAG</span>
-                                        ) : (
-                                            <span className="badge badge-success">OK</span>
-                                        )}
-                                    </td>
-                                    <td>{item.delivered}</td>
-                                    <td>{item.consumed}</td>
-                                    <td><strong>{item.stock}</strong></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     );
 };
@@ -234,13 +161,23 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        Totaal Besteld: <span style={{ color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</span>
+                    </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Geleverd: <span style={{ color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</span>
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
                     </div>
+                     <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
+                        title="Scroll naar boven"
+                    >
+                        <ArrowUpCircle size={22} />
+                    </button>
                 </div>
             </div>
 
@@ -337,87 +274,86 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: 'auto' }}>Naam</th>
-                                <th style={{ width: '80px' }}>Aantal</th>
                                 <th style={{ width: '120px' }}>Subtotaal (aankoop)</th>
-                                <th style={{ width: '130px' }}>Eff. Duur</th>
+                                <th style={{ width: '130px' }}>Voortgang</th>
                                 <th style={{ width: '110px' }}>Kost p/w</th>
                                 <th style={{ width: '140px' }}>Start Week</th>
+                                <th style={{ width: '80px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {stats.consumptionInWeek.length > 0 ? stats.consumptionInWeek.map(c => {
                                 const isCompleted = c.completed && c.effDuration > 0;
+                                const isCarriedOver = c.weeksSincePurchase > 1;
                                 return (
-                                <tr key={c.id}>
+                                <tr
+                                    key={c.id}
+                                    style={{
+                                        backgroundColor: isCarriedOver ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                                        borderTop: isCarriedOver ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                                    }}
+                                >
                                     <td>{c.displayName}</td>
-                                    <td><EditableCell value={c.qty} type="number" precision={0} onSave={val => updateItem('consumption', c.id, { qty: val })} /></td>
                                     <td>
                                         €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
                                     </td>
-                                    <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <EditableCell
-                                            value={c.effDuration ?? '---'}
-                                            type={c.effDuration ? 'number' : 'text'}
-                                            precision={0}
-                                            suffix=" w"
-                                            onSave={val => {
-                                                const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
-                                                updateItem('consumption', c.id, { 
-                                                    effDuration: isEmpty ? null : parseFloat(val), 
-                                                    completed: !isEmpty 
-                                                });
-                                            }}
-                                        />
-                                        {!isCompleted ? (
-                                            <button
-                                                onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
-                                                className="badge badge-danger"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem' }}
-                                            >
-                                                OP
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
-                                                className="badge badge-warning"
-                                                title="Heropen item (niet op)"
-                                                style={{ border: 'none', cursor: 'pointer', padding: '4px', marginLeft: '0.5rem', display: 'flex', alignItems: 'center' }}
-                                            >
-                                                <RotateCcw size={14} />
-                                            </button>
-                                        )}
+                                    <td>
+                                        <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                            <span>{c.weeksSincePurchase}/</span>
+                                            <EditableCell
+                                                value={c.effDuration ?? (c.estDuration || '---')}
+                                                type={c.effDuration ? 'number' : 'text'}
+                                                precision={0}
+                                                suffix=" w"
+                                                onSave={val => {
+                                                    const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
+                                                    updateItem('consumption', c.id, {
+                                                        effDuration: isEmpty ? null : parseFloat(val),
+                                                        completed: !isEmpty
+                                                    });
+                                                }}
+                                            />
+                                        </span>
                                     </td>
                                     <td>
                                         <strong>€{c.weeklyCost.toFixed(2)}</strong>
                                     </td>
                                     <td>
-                                        <EditableCell 
-                                            value={c.startDate} 
+                                        <EditableCell
+                                            value={c.startDate}
                                             type="date"
-                                            onSave={val => updateItem('consumption', c.id, { startDate: val })} 
+                                            onSave={val => updateItem('consumption', c.id, { startDate: val })}
                                         />
+                                    </td>
+                                    <td>
+                                        {isCurrent && (
+                                            <>
+                                                {!isCompleted ? (
+                                                    <button
+                                                        onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
+                                                        className="badge badge-danger"
+                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                                    >
+                                                        OP
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
+                                                        className="badge badge-warning"
+                                                        title="Heropen item (niet op)"
+                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <RotateCcw size={14} />
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             )}) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
                         </tbody>
                     </table>
                 </section>
-
-                {/* 4. Voorraad Evolutie */}
-                {stats.inventoryAtEnd && stats.inventoryAtEnd.length > 0 && (
-                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
-                            <Package size={16} /> Voorziene voorraad (Einde Week)
-                        </h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem' }}>
-                            {stats.inventoryAtEnd.map((item, idx) => (
-                                <div key={idx} className="glass-panel" style={{ padding: '4px 12px', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {item.name}: <strong style={{ color: 'var(--accent-color)' }}>{item.stock}</strong>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
             </div>
         </div>
     );
@@ -434,7 +370,8 @@ WeeklyCard.propTypes = {
             deliveryTotal: PropTypes.number.isRequired,
             deliveries: PropTypes.array.isRequired,
             consumptionInWeek: PropTypes.array.isRequired,
-            inventoryAtEnd: PropTypes.array.isRequired,
+            inventoryAtStart: PropTypes.array,
+            inventoryAtEnd: PropTypes.array,
         }).isRequired,
     }).isRequired,
     onAddAdhoc: PropTypes.func.isRequired,
