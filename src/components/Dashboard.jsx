@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
-import { useInventoryStats } from '../hooks/useInventoryStats';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Package, Undo2, Redo2 } from 'lucide-react';
+import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2 } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
 import ConsumptionForm from './ConsumptionForm';
@@ -11,12 +10,10 @@ import PropTypes from 'prop-types';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
-    const { getInventory } = useInventoryStats();
     const { undo, redo, canUndo, canRedo } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
 
     const timeline = getTimeline();
-    const inventoryMap = getInventory();
 
     return (
         <div className="dashboard">
@@ -255,22 +252,6 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         </tbody>
                     </table>
                 </section>
-
-                {/* Voorraad (begin) */}
-                {stats.inventoryAtStart && stats.inventoryAtStart.length > 0 && (
-                    <section>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
-                            <Package size={16} /> Voorziene voorraad (Begin Week)
-                        </h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem', marginBottom: '1rem' }}>
-                            {stats.inventoryAtStart.map((item, idx) => (
-                                <div key={idx} className="glass-panel" style={{ padding: '4px 12px', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {item.name}: <strong style={{ color: 'var(--accent-color)' }}>{item.stock}</strong>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
 
                 {/* 3. In Effectief Verbruik */}
                 <section>

@@ -1,8 +1,8 @@
 import { useAppContext } from '../context/AppContext';
-import { isWeekInRange, parseWeekId, getAbsoluteWeek } from '../utils/weekUtils';
+import { getAbsoluteWeek } from '../utils/weekUtils';
 
 export const useWeeklyStats = () => {
-    const { activeData, getRelativeWeekId, getCurrentWeekId } = useAppContext();
+    const { activeData, getRelativeWeekId } = useAppContext();
 
     const getStatsForWeek = (weekId) => {
         const targetAbs = getAbsoluteWeek(weekId);
@@ -14,9 +14,6 @@ export const useWeeklyStats = () => {
         // 3.b.1 Leveringen van deze week
         const deliveries = activeData.deliveries.filter(d => d.weekId === weekId);
         const deliveryTotal = deliveries.reduce((sum, d) => sum + (d.price * d.qty), 0);
-
-        const currentWeekId = getCurrentWeekId();
-        const currentAbs = getAbsoluteWeek(currentWeekId);
 
         // Effective consumption is now based on all deliveries that are in stock and "active" for the current week
         const consumptionBySource = activeData.consumption

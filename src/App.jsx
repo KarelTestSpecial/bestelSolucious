@@ -5,12 +5,10 @@ import Inventory from './components/Inventory';
 import DataManager from './components/DataManager';
 import HistoryView from './components/HistoryView';
 import './index.css';
-import { LayoutDashboard, Archive, Settings, History, Undo2, Redo2 } from 'lucide-react';
-import { useAppContext } from './context/AppContext';
+import { LayoutDashboard, Archive, Settings, History } from 'lucide-react';
 
 function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
-    const { undo, redo, canUndo, canRedo } = useAppContext();
 
     return (
         <>
