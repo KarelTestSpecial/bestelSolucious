@@ -41,7 +41,8 @@ const ConsumptionForm = ({ onClose }) => {
             name: formData.name,
             price: unitPrice,
             qty: qty,
-            weekId: formData.weekId
+            weekId: formData.weekId,
+            estDuration: parseInt(formData.estDuration),
         }, {
             sourceId: id,
             sourceType: 'adhoc',

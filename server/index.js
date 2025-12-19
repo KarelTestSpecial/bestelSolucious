@@ -113,12 +113,7 @@ app.post('/api/deliveries', async (req, res) => {
 
 app.post('/api/consumption', async (req, res) => {
   const data = req.body;
-  const newConsumption = await prisma.consumption.create({
-    data: {
-      ...data,
-      estDuration: parseFloat(data.estDuration || 1),
-    }
-  });
+  const newConsumption = await prisma.consumption.create({ data });
   res.json(newConsumption);
 });
 

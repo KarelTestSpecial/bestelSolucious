@@ -1,0 +1,20 @@
+
+> bestel-tracker@0.0.0 dev:all /app
+> concurrently "pnpm run dev" "pnpm run server"
+
+[0]
+[0] > bestel-tracker@0.0.0 dev /app
+[0] > vite
+[0]
+[1]
+[1] > bestel-tracker@0.0.0 server /app
+[1] > node server/index.js
+[1]
+[1] Server draait op http://localhost:3000
+[1] pnpm run server exited with code 0
+[0]
+[0]   VITE v5.4.21  ready in 271 ms
+[0]
+[0]   ➜  Local:   http://localhost:5173/
+[0]   ➜  Network: use --host to expose
+[0] pnpm run dev exited with code 0
