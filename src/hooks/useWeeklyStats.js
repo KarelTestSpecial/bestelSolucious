@@ -26,7 +26,7 @@ export const useWeeklyStats = () => {
                 return acc;
             }, {});
 
-        const consumptionInWeek = activeData.deliveries
+        const consumptionFromDeliveries = activeData.deliveries
             .map(d => {
                 const stock = d.qty - (consumptionBySource[d.id] || 0);
                 if (stock <= 0) return null;
@@ -65,6 +65,39 @@ export const useWeeklyStats = () => {
                 };
             })
             .filter(Boolean);
+
+        const consumptionFromOrders = activeData.orders
+            .filter(o => !activeData.deliveries.some(d => d.orderId === o.id))
+            .map(o => {
+                const startAbs = getAbsoluteWeek(o.weekId);
+                const duration = o.estDuration || 1;
+                const endAbs = startAbs + duration - 1;
+
+                if (targetAbs < startAbs || targetAbs > endAbs) return null;
+
+                const cost = o.price * o.qty;
+                const weeklyCost = cost / duration;
+                const weeksSincePurchase = targetAbs - startAbs + 1;
+
+                return {
+                    id: `implicit-order-${o.id}`,
+                    displayName: o.name || 'Besteld Item',
+                    cost: cost,
+                    qty: o.qty,
+                    startDate: o.weekId,
+                    estDuration: o.estDuration,
+                    effDuration: null,
+                    completed: false,
+                    weeklyCost: weeklyCost,
+                    weeksSincePurchase: weeksSincePurchase,
+                    duration: duration,
+                    sourceId: o.id,
+                    isProjected: true
+                };
+            })
+            .filter(Boolean);
+
+        const consumptionInWeek = [...consumptionFromDeliveries, ...consumptionFromOrders];
 
         const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + c.weeklyCost, 0);
 
