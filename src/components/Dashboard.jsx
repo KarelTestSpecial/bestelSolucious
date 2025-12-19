@@ -77,52 +77,6 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', borderTop: '4px solid var(--accent-color)' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <Package /> Huidige Voorziene voorraad
-                </h3>
-                <div className="table-container">
-                    <table className="formal-table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Status</th>
-                                <th>Geleverd</th>
-                                <th>Verbruikt (Op)</th>
-                                <th>Stock</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {inventoryMap.length === 0 ? (
-                                <tr><td colSpan="5" className="empty-text">Geen voorraad data</td></tr>
-                            ) : inventoryMap.map(item => (
-                                <tr key={item.id}>
-                                    <td><strong>{item.name}</strong></td>
-                                    <td>
-                                        {item.stock <= 0 ? (
-                                            <span className="badge badge-danger">OP</span>
-                                        ) : item.stock < 2 ? (
-                                            <span className="badge badge-warning">LAAG</span>
-                                        ) : (
-                                            <span className="badge badge-success">OK</span>
-                                        )}
-                                    </td>
-                                    <td>{item.delivered}</td>
-                                    <td>{item.consumed}</td>
-                                    <td>
-                                        <strong>{item.stock}</strong>
-                                        {item.weeksSincePurchase && item.estDuration && (
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                                                ({item.weeksSincePurchase}w / {item.estDuration}w)
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     );
 };
@@ -339,8 +293,15 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         <tbody>
                             {stats.consumptionInWeek.length > 0 ? stats.consumptionInWeek.map(c => {
                                 const isCompleted = c.completed && c.effDuration > 0;
+                                const isCarriedOver = c.weeksSincePurchase > 1;
                                 return (
-                                <tr key={c.id}>
+                                <tr
+                                    key={c.id}
+                                    style={{
+                                        backgroundColor: isCarriedOver ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                                        borderTop: isCarriedOver ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                                    }}
+                                >
                                     <td>{c.displayName}</td>
                                     <td>
                                         €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
