@@ -84,6 +84,7 @@ const ConsumptionForm = ({ onClose }) => {
                                 className="input-field" type="number" step="0.01"
                                 value={formData.cost}
                                 onChange={e => setFormData({ ...formData, cost: e.target.value })}
+                                onWheel={(e) => e.preventDefault()}
                                 required
                             />
                         </div>
@@ -105,6 +106,7 @@ const ConsumptionForm = ({ onClose }) => {
                                 className="input-field" type="number" min="1"
                                 value={formData.estDuration}
                                 onChange={e => setFormData({ ...formData, estDuration: e.target.value })}
+                                onWheel={(e) => e.preventDefault()}
                                 required
                             />
                         </div>
