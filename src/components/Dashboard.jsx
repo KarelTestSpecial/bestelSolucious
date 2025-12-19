@@ -329,9 +329,9 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: 'auto' }}>Naam</th>
-                                <th style={{ width: '80px' }}>Aantal</th>
                                 <th style={{ width: '120px' }}>Subtotaal (aankoop)</th>
                                 <th style={{ width: '130px' }}>Eff. Duur</th>
+                                <th style={{ width: '130px' }}>Voortgang</th>
                                 <th style={{ width: '110px' }}>Kost p/w</th>
                                 <th style={{ width: '140px' }}>Start Week</th>
                             </tr>
@@ -342,13 +342,12 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 return (
                                 <tr key={c.id}>
                                     <td>{c.displayName}</td>
-                                    <td><EditableCell value={c.qty} type="number" precision={0} onSave={val => updateItem('consumption', c.id, { qty: val })} /></td>
                                     <td>
                                         €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
                                     </td>
                                     <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <EditableCell
-                                            value={c.effDuration ?? '---'}
+                                            value={c.effDuration ?? (c.estDuration || '---')}
                                             type={c.effDuration ? 'number' : 'text'}
                                             precision={0}
                                             suffix=" w"
@@ -378,6 +377,11 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                                 <RotateCcw size={14} />
                                             </button>
                                         )}
+                                    </td>
+                                    <td>
+                                        <span style={{ fontWeight: 'bold' }}>
+                                            {c.weeksSincePurchase}/{c.duration} w
+                                        </span>
                                     </td>
                                     <td>
                                         <strong>€{c.weeklyCost.toFixed(2)}</strong>

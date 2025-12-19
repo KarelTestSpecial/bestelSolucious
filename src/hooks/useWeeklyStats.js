@@ -18,27 +18,53 @@ export const useWeeklyStats = () => {
         const currentWeekId = getCurrentWeekId();
         const currentAbs = getAbsoluteWeek(currentWeekId);
 
-        // Enrich and filter consumption
-        const consumptionInWeek = activeData.consumption.map(c => {
-            let name = c.name || 'Onbekend';
-            if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
-                const delivery = activeData.deliveries.find(d => d.id === c.sourceId);
-                // We prefer the delivery name if it exists, as it might have been edited by the user
-                name = delivery ? delivery.name : (c.name || 'Item');
-            }
+        // Effective consumption is now based on all deliveries that are in stock and "active" for the current week
+        const consumptionBySource = activeData.consumption
+            .filter(c => c.completed && c.sourceId)
+            .reduce((acc, c) => {
+                acc[c.sourceId] = (acc[c.sourceId] || 0) + c.qty;
+                return acc;
+            }, {});
 
-            let duration;
-            if (c.completed && c.effDuration) {
-                duration = c.effDuration;
-            } else {
-                const startAbs = getAbsoluteWeek(c.startDate);
-                // Duur groeit elke week zolang niet voltooid (start bij 1)
-                duration = Math.max(1, currentAbs - startAbs + 1);
-            }
+        const consumptionInWeek = activeData.deliveries
+            .map(d => {
+                const stock = d.qty - (consumptionBySource[d.id] || 0);
+                if (stock <= 0) return null;
 
-            const weeklyCost = c.cost / duration;
-            return { ...c, displayName: name, weeklyCost, duration };
-        }).filter(c => isWeekInRange(weekId, c.startDate, c.duration));
+                const startAbs = getAbsoluteWeek(d.weekId);
+                const explicitConsumption = activeData.consumption.find(c => c.sourceId === d.id);
+
+                const duration = (explicitConsumption && explicitConsumption.effDuration) ? explicitConsumption.effDuration : (d.estDuration || 1);
+                const endAbs = startAbs + duration - 1;
+
+                if (targetAbs < startAbs || targetAbs > endAbs) return null;
+
+                const completed = explicitConsumption ? explicitConsumption.completed : false;
+                if (completed) {
+                    const completedEndAbs = startAbs + (explicitConsumption.effDuration || 1) - 1;
+                    if (completedEndAbs < targetAbs) return null;
+                }
+
+                const cost = explicitConsumption ? explicitConsumption.cost : d.price * d.qty;
+                const weeklyCost = cost / duration;
+                const weeksSincePurchase = targetAbs - startAbs + 1;
+
+                return {
+                    id: explicitConsumption ? explicitConsumption.id : `implicit-${d.id}`,
+                    displayName: d.name || 'Geleverd Item',
+                    cost: cost,
+                    qty: d.qty,
+                    startDate: d.weekId,
+                    estDuration: d.estDuration,
+                    effDuration: explicitConsumption ? explicitConsumption.effDuration : null,
+                    completed: completed,
+                    weeklyCost: weeklyCost,
+                    weeksSincePurchase: weeksSincePurchase,
+                    duration: duration,
+                    sourceId: d.id,
+                };
+            })
+            .filter(Boolean);
 
         const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + c.weeklyCost, 0);
 
