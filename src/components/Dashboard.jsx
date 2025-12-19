@@ -228,32 +228,37 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
     const isCurrent = offset === 0;
 
     return (
-        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
                 <h3 style={{ margin: 0 }}>
-                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
+                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-                    Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        Totaal Geleverd: <span style={{ color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
+                    </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
                 {/* 1. Bestellingen */}
                 <section>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0rem' }}>
                         <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Naam</th>
-                                <th>Aantal</th>
-                                <th>Prijs (p/u)</th>
-                                <th>Verwachtte Duur</th>
-                                <th>Subtotaal</th>
-                                <th style={{ width: '40px' }}></th>
+                                <th style={{ width: 'auto' }}>Naam</th>
+                                <th style={{ width: '80px' }}>Aantal</th>
+                                <th style={{ width: '120px' }}>Prijs (p/u)</th>
+                                <th style={{ width: '130px' }}>Verwachte Duur</th>
+                                <th style={{ width: '110px' }}>Subtotaal</th>
+                                <th style={{ width: '140px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -278,10 +283,10 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         </tbody>
                     </table>
                 </section>
-
+                
                 {/* 2. Effectieve Leveringen */}
                 <section>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
@@ -290,12 +295,12 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Naam</th>
-                                <th>Aantal</th>
-                                <th>Prijs (p/u)</th>
-                                <th>Verwachte Duur</th>
-                                <th>Subtotaal</th>
-                                <th style={{ width: '40px' }}></th>
+                                <th style={{ width: 'auto' }}>Naam</th>
+                                <th style={{ width: '80px' }}>Aantal</th>
+                                <th style={{ width: '120px' }}>Prijs (p/u)</th>
+                                <th style={{ width: '130px' }}>Verwachte Duur</th>
+                                <th style={{ width: '110px' }}>Subtotaal</th>
+                                <th style={{ width: '140px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -323,7 +328,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
 
                 {/* 3. In Effectief Verbruik */}
                 <section>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0 }}>
                             <TrendingUp size={16} /> Effectief Verbruik
                         </h4>
@@ -331,12 +336,12 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Naam</th>
-                                <th>Herkomst</th>
-                                <th>Start Week</th>
-                                <th>Aantal</th>
-                                <th>Eff. Duur</th>
-                                <th>Kost p/w</th>
+                                <th style={{ width: 'auto' }}>Naam</th>
+                                <th style={{ width: '80px' }}>Aantal</th>
+                                <th style={{ width: '120px' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '130px' }}>Eff. Duur</th>
+                                <th style={{ width: '110px' }}>Kost p/w</th>
+                                <th style={{ width: '140px' }}>Start Week</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -345,19 +350,10 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                 return (
                                 <tr key={c.id}>
                                     <td>{c.displayName}</td>
-                                    <td>
-                                        <span className={`badge ${c.sourceType === 'adhoc' ? 'badge-warning' : 'badge-success'}`}>
-                                            {c.sourceType === 'delivery' ? 'Levering' : 'Ad-hoc'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <EditableCell 
-                                            value={c.startDate} 
-                                            type="date"
-                                            onSave={val => updateItem('consumption', c.id, { startDate: val })} 
-                                        />
-                                    </td>
                                     <td><EditableCell value={c.qty} type="number" precision={0} onSave={val => updateItem('consumption', c.id, { qty: val })} /></td>
+                                    <td>
+                                        €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
+                                    </td>
                                     <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <EditableCell
                                             value={c.effDuration ?? '---'}
@@ -392,12 +388,14 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         )}
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                            <strong>€{c.weeklyCost.toFixed(2)}</strong>
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                                aankoop: €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
-                                            </span>
-                                        </div>
+                                        <strong>€{c.weeklyCost.toFixed(2)}</strong>
+                                    </td>
+                                    <td>
+                                        <EditableCell 
+                                            value={c.startDate} 
+                                            type="date"
+                                            onSave={val => updateItem('consumption', c.id, { startDate: val })} 
+                                        />
                                     </td>
                                 </tr>
                             )}) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
@@ -407,8 +405,8 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
 
                 {/* 4. Voorraad Evolutie */}
                 {stats.inventoryAtEnd && stats.inventoryAtEnd.length > 0 && (
-                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0.7rem' }}>
+                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
                             <Package size={16} /> Voorziene voorraad (Einde Week)
                         </h4>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem' }}>

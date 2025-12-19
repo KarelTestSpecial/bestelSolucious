@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Bestel Tracker
+Comment=Start de Bestel Tracker
+Exec=bash /home/kareltestspecial/a/bestelSolucious/bestel/bestel.sh
+Icon=applications-development
+Terminal=false
+Type=Application
+Categories=Development;Network;
+StartupNotify=true

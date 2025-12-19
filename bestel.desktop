@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Bestel Tracker
+Comment=Start de Bestel Tracker
+Exec=x-terminal-emulator -e /bin/bash -l -c "/home/kareltestspecial/a/bestelSolucious/bestel/bestel.sh"
+Icon=applications-development
+Terminal=false
+Categories=Development;Network;
+StartupNotify=true
