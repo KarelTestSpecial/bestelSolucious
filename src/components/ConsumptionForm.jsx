@@ -64,7 +64,7 @@ const ConsumptionForm = ({ onClose }) => {
         }}>
             <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                    <h2>Ad-hoc Verbruik Registreren</h2>
+                    <h2>Ad-hoc Invoer Registreren</h2>
                     <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><X size={20} /></button>
                 </div>
 
@@ -109,7 +109,7 @@ const ConsumptionForm = ({ onClose }) => {
                             />
                         </div>
                         <div>
-                            <label>Datum van Verbruik</label>
+                            <label>Datum van Invoer</label>
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                 <input
                                     className="input-field"
@@ -128,7 +128,7 @@ const ConsumptionForm = ({ onClose }) => {
                         Week: <strong>{formData.weekId}</strong>
                     </p>
 
-                    <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Verbruik</button>
+                    <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Invoer</button>
                 </form>
             </div>
         </div>,
