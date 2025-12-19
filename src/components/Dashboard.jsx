@@ -228,13 +228,13 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
     const isCurrent = offset === 0;
 
     return (
-        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
                 <h3 style={{ margin: 0 }}>
-                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
+                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
-                <div style={{ display: 'flex', gap: '2rem' }}>
+                <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Geleverd: <span style={{ color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</span>
                     </div>
@@ -244,10 +244,10 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
                 {/* 1. Bestellingen */}
                 <section>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0rem' }}>
                         <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
@@ -283,10 +283,10 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         </tbody>
                     </table>
                 </section>
-
+                
                 {/* 2. Effectieve Leveringen */}
                 <section>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
@@ -328,7 +328,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
 
                 {/* 3. In Effectief Verbruik */}
                 <section>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0 }}>
                             <TrendingUp size={16} /> Effectief Verbruik
                         </h4>
@@ -405,8 +405,8 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
 
                 {/* 4. Voorraad Evolutie */}
                 {stats.inventoryAtEnd && stats.inventoryAtEnd.length > 0 && (
-                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0.7rem' }}>
+                    <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', marginBottom: '0rem' }}>
                             <Package size={16} /> Voorziene voorraad (Einde Week)
                         </h4>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem' }}>
