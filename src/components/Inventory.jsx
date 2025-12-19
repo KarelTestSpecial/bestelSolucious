@@ -1,42 +1,10 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useInventoryStats } from '../hooks/useInventoryStats';
 import { Package } from 'lucide-react';
 
 const Inventory = () => {
-    const { activeData } = useAppContext();
-
-    // Bereken de voorraad: Geleverd - Verbruikt
-    // We groeperen per productnaam/ID
-    const inventoryMap = activeData.products.map(product => {
-        const totalDelivered = activeData.deliveries
-            .filter(d => d.productId === product.id)
-            .reduce((sum, d) => sum + d.qty, 0);
-
-        const totalConsumed = activeData.consumption
-            .filter(c => {
-                // Alleen voltooide items tellen als verbruikt uit de stock
-                if (!c.completed) return false;
-
-                // Als de source een delivery is van dit product
-                if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
-                    // Voor adhoc items, checken we of de naam overeenkomt als er geen directe product link is
-                    // Maar idealiter linken we via delivery ID.
-                    // Echter, adhoc consumption heeft sourceId = deliveryId (door onze vorige fix).
-                    // Dus we moeten de delivery vinden.
-                    const del = activeData.deliveries.find(d => d.id === c.sourceId);
-                    return del && del.productId === product.id;
-                }
-                return false;
-            })
-            .reduce((sum, c) => sum + c.qty, 0);
-
-        return {
-            ...product,
-            stock: totalDelivered - totalConsumed,
-            delivered: totalDelivered,
-            consumed: totalConsumed
-        };
-    }).filter(item => item.stock > 0);
+    const { getInventory } = useInventoryStats();
+    const inventoryMap = getInventory();
 
     return (
         <div className="inventory">
@@ -76,6 +44,11 @@ const Inventory = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Package size={16} color="var(--accent-color)" />
                                         {item.stock} stuks
+                                        {item.weeksSincePurchase && item.estDuration && (
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                                ({item.weeksSincePurchase}w / {item.estDuration}w)
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

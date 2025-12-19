@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
+import { useInventoryStats } from '../hooks/useInventoryStats';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
 import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Package, Undo2, Redo2 } from 'lucide-react';
 import OrderForm from './OrderForm';
@@ -10,44 +11,12 @@ import PropTypes from 'prop-types';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
-    const { activeData, undo, redo, canUndo, canRedo } = useAppContext();
+    const { getInventory } = useInventoryStats();
+    const { undo, redo, canUndo, canRedo } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
 
     const timeline = getTimeline();
-
-    // Bereken voorraad
-    const inventoryMap = activeData.products.map(product => {
-        const totalDelivered = activeData.deliveries
-            .filter(d => d.productId === product.id)
-            .reduce((sum, d) => sum + d.qty, 0);
-
-        const totalConsumed = activeData.consumption
-            .filter(c => {
-                if (!c.completed) return false;
-                if (c.sourceType === 'delivery' || c.sourceType === 'adhoc') {
-                    const del = activeData.deliveries.find(d => d.id === c.sourceId);
-                    return del && del.productId === product.id;
-                }
-                return false;
-            })
-            .reduce((sum, c) => sum + c.qty, 0);
-
-        return {
-            ...product,
-            stock: totalDelivered - totalConsumed,
-            delivered: totalDelivered,
-            consumed: totalConsumed
-        };
-    }).map(item => {
-        // Gebruik de meest recente naam uit leveringen of bestellingen
-        const lastDelivery = [...activeData.deliveries].reverse().find(d => d.productId === item.id);
-        if (lastDelivery && lastDelivery.name) return { ...item, name: lastDelivery.name };
-        
-        const lastOrder = [...activeData.orders].reverse().find(o => o.productId === item.id);
-        if (lastOrder && lastOrder.name) return { ...item, name: lastOrder.name };
-        
-        return item;
-    }).filter(item => item.stock > 0);
+    const inventoryMap = getInventory();
 
     return (
         <div className="dashboard">
@@ -140,7 +109,14 @@ const Dashboard = () => {
                                     </td>
                                     <td>{item.delivered}</td>
                                     <td>{item.consumed}</td>
-                                    <td><strong>{item.stock}</strong></td>
+                                    <td>
+                                        <strong>{item.stock}</strong>
+                                        {item.weeksSincePurchase && item.estDuration && (
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
+                                                ({item.weeksSincePurchase}w / {item.estDuration}w)
+                                            </span>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
