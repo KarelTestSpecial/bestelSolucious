@@ -3,55 +3,48 @@ export const parseWeekId = (weekId) => {
     return { year, week };
 };
 
-export const getAbsoluteWeek = (weekId) => {
+const getMondayOfISOWeek = (weekId) => {
     const { year, week } = parseWeekId(weekId);
-    return year * 53 + week;
+    const simple = new Date(year, 0, 1 + (week - 1) * 7);
+    const dayOfWeek = simple.getDay();
+    const ISOweekStart = new Date(simple);
+    if (dayOfWeek <= 4) {
+        ISOweekStart.setDate(simple.getDate() - (dayOfWeek || 7) + 1);
+    } else {
+        ISOweekStart.setDate(simple.getDate() + 8 - (dayOfWeek || 7));
+    }
+    ISOweekStart.setHours(12, 0, 0, 0);
+    return ISOweekStart;
+};
+
+export const getAbsoluteWeek = (weekId) => {
+    const monday = getMondayOfISOWeek(weekId);
+    // Reference date: 2020-01-06 (a Monday)
+    const refDate = new Date(2020, 0, 6, 12, 0, 0, 0);
+    const diffMs = monday.getTime() - refDate.getTime();
+    return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
 };
 
 export const isWeekInRange = (targetWeekId, startWeekId, durationWeeks) => {
-    const target = parseWeekId(targetWeekId);
-    const start = parseWeekId(startWeekId);
-
-    // Calculate relative week offset
-    // Simplified for same year. In a real app we need year transition logic.
-    const startAbsolute = start.year * 53 + start.week;
-    const targetAbsolute = target.year * 53 + target.week;
-
+    const startAbsolute = getAbsoluteWeek(startWeekId);
+    const targetAbsolute = getAbsoluteWeek(targetWeekId);
     const endAbsolute = startAbsolute + durationWeeks - 1;
 
     return targetAbsolute >= startAbsolute && targetAbsolute <= endAbsolute;
 };
 
 export const getDateOfTuesday = (weekId) => {
-    const { year, week } = parseWeekId(weekId);
-    // ISO week date logic: find the first Monday of the year
-    const simple = new Date(year, 0, 1 + (week - 1) * 7);
-    const dayOfWeek = simple.getDay();
-    const ISOweekStart = simple;
-    if (dayOfWeek <= 4) {
-        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-    } else {
-        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-    }
-    // Tuesday is the 2nd day of the week
-    const tuesday = new Date(ISOweekStart);
-    tuesday.setDate(ISOweekStart.getDate() + 1);
+    const monday = getMondayOfISOWeek(weekId);
+    const tuesday = new Date(monday);
+    tuesday.setDate(monday.getDate() + 1);
 
     return tuesday.toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit' });
 };
 
 export const getISODateOfTuesday = (weekId) => {
-    const { year, week } = parseWeekId(weekId);
-    const simple = new Date(year, 0, 1 + (week - 1) * 7);
-    const dayOfWeek = simple.getDay();
-    const ISOweekStart = simple;
-    if (dayOfWeek <= 4) {
-        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-    } else {
-        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-    }
-    const tuesday = new Date(ISOweekStart);
-    tuesday.setDate(ISOweekStart.getDate() + 1);
+    const monday = getMondayOfISOWeek(weekId);
+    const tuesday = new Date(monday);
+    tuesday.setDate(monday.getDate() + 1);
     return tuesday.toISOString().split('T')[0];
 };
 

@@ -1,0 +1,9 @@
+Hervat de sessie voor de 'Bestel Tracker' app in /home/kareltestspecial/a/bestelSolucious/bestel. 
+
+Context:
+1. We hebben de opstart-automatisering (bestel.sh en bestel.desktop) geoptimaliseerd voor Chromebook/Crostini.
+2. De scripts bevatten nu expliciete paden voor NVM/PNPM en DBUS-instellingen voor de ChromeOS browser-integratie.
+3. De laatste stap was het installeren van de snelkoppeling in ~/.local/share/applications.
+4. Doel: Controleren of de app nu succesvol start via de Launcher en daarna verdergaan met de functionele ontwikkeling.
+
+Lees 'startup_debug.log' om de laatste status te verifiëren.

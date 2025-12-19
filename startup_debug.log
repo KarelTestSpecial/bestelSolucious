@@ -1,0 +1,26 @@
+--- Start log Fri Dec 19 12:48:00 PM CET 2025 ---
+Stap 1: Map gecontroleerd
+Stap 2: Servers starten...
+Wachten op servers...
+
+> bestel-tracker@0.0.0 dev:all /home/kareltestspecial/a/bestelSolucious/bestel
+> concurrently "pnpm run dev" "pnpm run server" --raw
+
+
+> bestel-tracker@0.0.0 dev /home/kareltestspecial/a/bestelSolucious/bestel
+> vite
+
+
+> bestel-tracker@0.0.0 server /home/kareltestspecial/a/bestelSolucious/bestel
+> node server/index.js
+
+Server draait op http://localhost:3000
+Port 5173 is in use, trying another one...
+
+  VITE v5.4.21  ready in 773 ms
+
+  ➜  Local:   http://localhost:5174/
+  ➜  Network: use --host to expose
+Poging om browser te openen op http://localhost:5173...
+Gebruik garcon-url-handler...
+Browser succesvol geopend via garcon

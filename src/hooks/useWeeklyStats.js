@@ -64,10 +64,12 @@ export const useWeeklyStats = () => {
             // 1. Effectief verbruik (wat al als 'OP' is gemarkeerd)
             const completedConsumedUpTo = activeData.consumption
                 .filter(c => {
-                    if (!c.completed || !c.effDuration) return false;
+                    if (!c.completed) return false;
                     const del = activeData.deliveries.find(d => d.id === c.sourceId);
                     if (!del || del.productId !== product.id) return false;
-                    const endAbs = getAbsoluteWeek(c.startDate) + c.effDuration - 1;
+                    
+                    const duration = c.effDuration || 1;
+                    const endAbs = getAbsoluteWeek(c.startDate) + duration - 1;
                     return endAbs <= targetAbs;
                 })
                 .reduce((sum, c) => sum + c.qty, 0);
