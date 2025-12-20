@@ -1,6 +1,7 @@
 // server/index.js
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import crypto from 'node:crypto'; // TOEGEVOEGD: Nodig voor UUID generatie
 
 const prisma = new PrismaClient();
 const app = express();
@@ -30,96 +31,118 @@ app.get('/api/consumption', async (req, res) => {
   res.json(consumption);
 });
 
-// Een gecombineerd endpoint voor alle data (om requests te besparen op je Chromebook)
+// Een gecombineerd endpoint voor alle data (om requests te besparen)
 app.get('/api/full-data', async (req, res) => {
-  const [products, orders, deliveries, consumption] = await Promise.all([
-    prisma.product.findMany(),
-    prisma.order.findMany(),
-    prisma.delivery.findMany(),
-    prisma.consumption.findMany()
-  ]);
-  res.json({ products, orders, deliveries, consumption });
+  try {
+    const [products, orders, deliveries, consumption] = await Promise.all([
+      prisma.product.findMany(),
+      prisma.order.findMany(),
+      prisma.delivery.findMany(),
+      prisma.consumption.findMany()
+    ]);
+    res.json({ products, orders, deliveries, consumption });
+  } catch (error) {
+    console.error("Error fetching full data:", error);
+    res.status(500).json({ error: "Ophalen data mislukt" });
+  }
 });
 
 // --- POST Endpoints (Data opslaan) ---
 
 app.post('/api/orders', async (req, res) => {
-  const data = req.body;
-
-  // Check of product bestaat, zo niet, maak aan
-  let product = await prisma.product.findFirst({ where: { name: data.name } });
-  if (!product) {
-    product = await prisma.product.create({ data: { name: data.name, id: data.productId } });
-  }
-
-  const newOrder = await prisma.order.create({
-    data: {
-      name: data.name,
-      price: parseFloat(data.price),
-      qty: parseInt(data.qty),
-      weekId: data.weekId,
-      estDuration: parseFloat(data.estDuration || 1),
-      productId: product.id, // Gebruik de ID van het gevonden/gemaakte product
-    }
-  });
-  res.json(newOrder);
-});
-
-app.post('/api/orders/bulk', async (req, res) => {
-  const { orders, weekId } = req.body; // orders is een array van { name, qty, price }
-  
-  const results = [];
-
-  // We verwerken ze 1 voor 1 (zou met createMany kunnen als we zeker weten dat producten bestaan)
-  // Om complexiteit te vermijden gebruiken we een simpele loop die producten aanmaakt indien nodig.
-  for (const item of orders) {
-    const productId = item.productId || crypto.randomUUID(); // Gebruik front-end ID of genereer een nieuwe
+  try {
+    const data = req.body;
+    let product = await prisma.product.findFirst({ where: { name: data.name } });
     
-    // 1. Zoek of maak product
-    let product = await prisma.product.findFirst({ where: { name: item.name } });
     if (!product) {
       product = await prisma.product.create({ 
-        data: { name: item.name, id: productId } 
+        data: { name: data.name, id: data.productId || crypto.randomUUID() } 
       });
     }
 
-    // 2. Maak bestelling
-    const order = await prisma.order.create({
+    const newOrder = await prisma.order.create({
       data: {
+        name: data.name,
+        price: parseFloat(data.price),
+        qty: parseFloat(data.qty), // AANGEPAST: parseFloat i.p.v. parseInt
+        weekId: data.weekId,
+        estDuration: parseFloat(data.estDuration || 1),
         productId: product.id,
-        name: product.name,
-        price: parseFloat(item.price || 0),
-        qty: parseInt(item.qty || 1),
-        estDuration: parseFloat(item.estDuration || 1),
-        weekId: weekId
       }
     });
-    results.push(order);
+    res.json(newOrder);
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(500).json({ error: error.message });
   }
+});
 
-  res.json({ success: true, count: results.length });
+app.post('/api/orders/batch', async (req, res) => {
+  // TOEGEVOEGD: Try/Catch blok om crashes te voorkomen
+  try {
+    const { orders, weekId } = req.body; 
+    const results = [];
+
+    for (const item of orders) {
+      // Gebruik backend crypto als fallback als frontend geen ID stuurt
+      const productId = item.productId || crypto.randomUUID(); 
+      
+      // 1. Zoek of maak product
+      let product = await prisma.product.findFirst({ where: { name: item.name } });
+      if (!product) {
+        product = await prisma.product.create({ 
+          data: { name: item.name, id: productId } 
+        });
+      }
+
+      // 2. Maak bestelling
+      const order = await prisma.order.create({
+        data: {
+          productId: product.id,
+          name: product.name,
+          price: parseFloat(item.price || 0),
+          qty: parseFloat(item.qty || 1), // AANGEPAST: parseFloat zodat 0.5 niet 0 wordt
+          estDuration: parseFloat(item.estDuration || 1),
+          weekId: weekId
+        }
+      });
+      results.push(order);
+    }
+
+    res.json({ success: true, count: results.length });
+  } catch (error) {
+    console.error("Batch import error:", error); // Dit toont de echte fout in Terminal 1
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.post('/api/deliveries', async (req, res) => {
-  const data = req.body;
-  const newDelivery = await prisma.delivery.create({ 
-    data: {
-      ...data,
-      estDuration: parseFloat(data.estDuration || 1)
-    } 
-  });
-  res.json(newDelivery);
+  try {
+    const data = req.body;
+    const newDelivery = await prisma.delivery.create({ 
+      data: {
+        ...data,
+        estDuration: parseFloat(data.estDuration || 1)
+      } 
+    });
+    res.json(newDelivery);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/api/consumption', async (req, res) => {
-  const data = req.body;
-  const newConsumption = await prisma.consumption.create({ data });
-  res.json(newConsumption);
+  try {
+    const data = req.body;
+    const newConsumption = await prisma.consumption.create({ data });
+    res.json(newConsumption);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // --- PATCH Endpoints (Updates) ---
 
-// Voorbeeld: Update verbruik (als iets op is)
 app.patch('/api/consumption/:id', async (req, res) => {
   const { id } = req.params;
   const updated = await prisma.consumption.update({
@@ -133,13 +156,11 @@ app.patch('/api/deliveries/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
-  // 1. Update de levering
   const updatedDelivery = await prisma.delivery.update({
     where: { id },
     data: updates
   });
 
-  // 2. Als prijs, aantal, naam of duur is gewijzigd, update ook het verbruik
   if (updates.price !== undefined || updates.qty !== undefined || updates.name !== undefined || updates.estDuration !== undefined) {
     const consumption = await prisma.consumption.findFirst({
       where: { sourceId: id }
@@ -157,7 +178,6 @@ app.patch('/api/deliveries/:id', async (req, res) => {
       });
     }
   }
-
   res.json(updatedDelivery);
 });
 
@@ -170,7 +190,7 @@ app.patch('/api/orders/:id', async (req, res) => {
   res.json(updated);
 });
 
-// --- DELETE Endpoints (Verwijderen) ---
+// --- DELETE Endpoints ---
 
 app.delete('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
@@ -180,12 +200,7 @@ app.delete('/api/orders/:id', async (req, res) => {
 
 app.delete('/api/deliveries/:id', async (req, res) => {
   const { id } = req.params;
-  
-  // Verwijder ook het bijbehorende verbruik
-  await prisma.consumption.deleteMany({
-    where: { sourceId: id }
-  });
-
+  await prisma.consumption.deleteMany({ where: { sourceId: id } });
   await prisma.delivery.delete({ where: { id } });
   res.json({ success: true });
 });
@@ -196,11 +211,9 @@ app.delete('/api/consumption/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-// --- CLEAR Endpoint (Alles wissen) ---
+// --- CLEAR Endpoint ---
 app.delete('/api/clear', async (req, res) => {
   try {
-    // Volgorde is belangrijk ivm foreign keys (als die er zouden zijn, maar SQLite prisma is vaak laks)
-    // Maar we verwijderen best in omgekeerde volgorde van afhankelijkheid.
     await prisma.$transaction([
       prisma.consumption.deleteMany(),
       prisma.delivery.deleteMany(),
@@ -214,17 +227,13 @@ app.delete('/api/clear', async (req, res) => {
   }
 });
 
-// --- RESTORE Endpoint (Smart Merge) ---
+// --- RESTORE Endpoint ---
 app.post('/api/restore', async (req, res) => {
   const { products, orders, deliveries, consumption } = req.body;
-
   try {
-    // We bouwen een enorme transactie array om alles atomair uit te voeren
-    // We gebruiken 'upsert': als ID bestaat -> update, anders -> create.
     const transaction = [];
 
-    // 1. Products
-    if (products && Array.isArray(products)) {
+    if (products?.length) {
       for (const p of products) {
         transaction.push(prisma.product.upsert({
           where: { id: p.id },
@@ -234,8 +243,7 @@ app.post('/api/restore', async (req, res) => {
       }
     }
 
-    // 2. Orders
-    if (orders && Array.isArray(orders)) {
+    if (orders?.length) {
       for (const o of orders) {
         transaction.push(prisma.order.upsert({
           where: { id: o.id },
@@ -249,19 +257,17 @@ app.post('/api/restore', async (req, res) => {
       }
     }
 
-    // 3. Deliveries
-    if (deliveries && Array.isArray(deliveries)) {
-                  for (const d of deliveries) {
-                      transaction.push(prisma.delivery.upsert({
-                          where: { id: d.id },
-                          update: { name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId },
-                          create: { id: d.id, name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId, createdAt: d.createdAt }
-                      }));
-                  }
+    if (deliveries?.length) {
+      for (const d of deliveries) {
+          transaction.push(prisma.delivery.upsert({
+              where: { id: d.id },
+              update: { name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId },
+              create: { id: d.id, name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId, createdAt: d.createdAt }
+          }));
+      }
     }
 
-    // 4. Consumption
-    if (consumption && Array.isArray(consumption)) {
+    if (consumption?.length) {
       for (const c of consumption) {
         transaction.push(prisma.consumption.upsert({
           where: { id: c.id },
@@ -275,12 +281,10 @@ app.post('/api/restore', async (req, res) => {
       }
     }
 
-    // Voer alles uit
     await prisma.$transaction(transaction);
-
-    res.json({ success: true, message: "Data succesvol samengevoegd (merged)." });
+    res.json({ success: true, message: "Data succesvol samengevoegd." });
   } catch (error) {
-    console.error("Restore (Merge) failed:", error);
+    console.error("Restore failed:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

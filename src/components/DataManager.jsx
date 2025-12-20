@@ -4,8 +4,8 @@ import { getWeekIdFromDate } from '../utils/weekUtils';
 import { Download, Trash2, Database, FileText, Info } from 'lucide-react';
 
 const DataManager = () => {
-    const { exportData, importData, activeData, addBulkOrders, clearDatabase } = useAppContext();
-    const [bulkText, setBulkText] = useState('');
+    const { exportData, importData, activeData, addBatchOrders, clearDatabase } = useAppContext();
+    const [batchText, setBatchText] = useState('');
     
     // Standaard datum: vandaag
     const getToday = () => new Date().toISOString().split('T')[0];
@@ -20,12 +20,12 @@ const DataManager = () => {
         }
     }, [targetDate]);
 
-    const handleBulkImport = async () => {
-        if (!bulkText.trim()) return;
+    const handleBatchImport = async () => {
+        if (!batchText.trim()) return;
         setIsProcessing(true);
 
         try {
-            const lines = bulkText.split('\n');
+            const lines = batchText.split('\n');
             const ordersToImport = [];
 
             lines.forEach(line => {
@@ -63,8 +63,8 @@ const DataManager = () => {
             }
 
             if (confirm(`${ordersToImport.length} bestellingen importeren voor week ${targetWeek}?`)) {
-                await addBulkOrders(targetWeek, ordersToImport);
-                setBulkText('');
+                await addBatchOrders(targetWeek, ordersToImport);
+                setBatchText('');
                 alert("Bestellingen succesvol geïmporteerd!");
             }
 
@@ -81,7 +81,7 @@ const DataManager = () => {
         if (!file) return;
         
         const reader = new FileReader();
-        reader.onload = (e) => setBulkText(e.target.result);
+        reader.onload = (e) => setBatchText(e.target.result);
         reader.readAsText(file);
         
         // Reset input value om opnieuw laden van hetzelfde bestand mogelijk te maken
@@ -125,7 +125,7 @@ const DataManager = () => {
                 <section className="glass-panel" style={{ gridColumn: '1 / -1' }}>
                     <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                         <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)' }}>
-                            <FileText /> Bulk Import Bestellingen
+                            <FileText /> Batch Import Bestellingen
                         </h2>
                         <p style={{ color: 'var(--text-muted)' }}>
                             Kopieer gegevens uit Excel of upload een CSV-bestand om snel meerdere bestellingen toe te voegen.
@@ -172,8 +172,8 @@ const DataManager = () => {
                             <textarea
                                 className="input-field"
                                 style={{ flex: 1, minHeight: '200px', fontFamily: 'monospace', fontSize: '0.9rem' }}
-                                value={bulkText}
-                                onChange={(e) => setBulkText(e.target.value)}
+                                value={batchText}
+                                onChange={(e) => setBatchText(e.target.value)}
                                 placeholder="Plak hier je Excel data..."
                             />
                             
@@ -190,9 +190,9 @@ const DataManager = () => {
                                     </button>
                                 </div>
                                 <button 
-                                    onClick={handleBulkImport} 
-                                    disabled={!bulkText.trim() || isProcessing}
-                                    style={{ flex: 2, opacity: (!bulkText.trim() || isProcessing) ? 0.5 : 1 }}
+                                    onClick={handleBatchImport} 
+                                    disabled={!batchText.trim() || isProcessing}
+                                    style={{ flex: 2, opacity: (!batchText.trim() || isProcessing) ? 0.5 : 1 }}
                                 >
                                     {isProcessing ? 'Bezig...' : 'Importeer Bestellingen'}
                                 </button>

@@ -6,7 +6,7 @@ import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const DeliveryForm = ({ onClose }) => {
-  const { activeData, confirmBulkDeliveries, getCurrentWeekId } = useAppContext();
+  const { activeData, confirmBatchDeliveries, getCurrentWeekId } = useAppContext();
 
   // We zoeken naar openstaande bestellingen die nog niet geleverd zijn
   const pendingOrders = activeData.orders.filter(order => {
@@ -59,7 +59,7 @@ const DeliveryForm = ({ onClose }) => {
       };
     });
 
-    await confirmBulkDeliveries(deliveryPayload);
+    await confirmBatchDeliveries(deliveryPayload);
     onClose();
   };
 

@@ -1,39 +1,46 @@
 #!/bin/bash
 
-# --- 1. HARDE PADEN (Dit lost de lege terminal op) ---
+# --- 1. CONFIGURATIE ---
 export PATH="/home/kareltestspecial/.config/nvm/versions/node/v22.20.0/bin:/home/kareltestspecial/.local/share/pnpm:$PATH"
-export DISPLAY=:0
-export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
-
 PROJECT_DIR="/home/kareltestspecial/a/bestelSolucious/bestel"
 cd "$PROJECT_DIR" || exit 1
 
-# --- 2. SCHOONMAAK (RAM vrijmaken) ---
-echo "Bezig met opschonen van oude processen..."
+# --- 2. FUNCTIE OM ALLES TE DODEN (RAM PROTECTIE) ---
+cleanup() {
+    echo ""
+    echo "🛑 Afsluiten..."
+    # Kill alle child processen van dit script (dus vite en node)
+    pkill -P $$ 
+    
+    # Voor de zekerheid specifieke poorten vrijgeven
+    fuser -k 5173/tcp 2>/dev/null
+    fuser -k 3000/tcp 2>/dev/null
+    
+    echo "✅ RAM vrijgemaakt. Venster sluit in 2 seconden."
+    sleep 2
+}
+
+# Voer cleanup uit als het script wordt onderbroken (CTRL+C) of het venster sluit (EXIT/TERM)
+trap cleanup SIGINT SIGTERM EXIT
+
+# --- 3. START PROCEDURE ---
+echo "🧹 Oude processen opschonen..."
 fuser -k 5173/tcp 2>/dev/null
 fuser -k 3000/tcp 2>/dev/null
-sleep 1
 
-# --- 3. BROWSER START IN DE ACHTERGROND ---
+echo "🚀 Servers starten..."
+
+# Start de browser in de achtergrond, wachtend op de poort
 (
-    echo "Wachten tot de server start..."
-    # We wachten tot poort 5173 echt open staat via /dev/tcp
     until printf "" 2>/dev/null >/dev/tcp/localhost/5173; do 
-        sleep 1
+        sleep 0.5
     done
-    echo "Server gevonden! Browser wordt nu geopend..."
+    echo "🔗 Verbinding gevonden! Browser openen..."
     garcon-url-handler http://localhost:5173
 ) &
 
-# --- 4. SERVERS STARTEN (ZICHTBAAR) ---
-echo "Servers worden nu gestart via PNPM..."
-echo "Als je dit ziet, werkt het script!"
-echo "------------------------------------------------"
-
-# We gebruiken het VOLLEDIGE PAD naar pnpm
+# Start de applicatie (Dit houdt het script levend)
 /home/kareltestspecial/.local/share/pnpm/pnpm dev:all --raw
 
-# Voorkom dat het venster sluit bij een fout
-echo "------------------------------------------------"
-echo "Servers zijn gestopt of konden niet starten."
-read -p "Druk op Enter om dit venster te sluiten..."
+# Het script komt hier pas als pnpm stopt.
+# De 'trap' functie hierboven handelt de rest af.

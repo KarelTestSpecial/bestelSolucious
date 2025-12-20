@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { getWeekIdFromDate } from '../utils/weekUtils'; // AANGEPAST: Importeer de centrale logica
 
 const AppContext = createContext();
 
@@ -10,30 +11,25 @@ export const useAppContext = () => {
 };
 
 export const AppProvider = ({ children }) => {
-    // We gebruiken één groot object voor alle data om het simpel te houden
     const [activeData, setActiveData] = useState({
         products: [],
         orders: [],
         deliveries: [],
-        consumption: [] // Dit verving 'stock' in de oude code
+        consumption: []
     });
-    const [archive] = useState([]); // Voor later
+    const [archive] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [undoStack, setUndoStack] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
 
-    // Helper to push current state to undo stack
     const pushToUndoStack = () => {
-        // We limit the stack size to 20 for memory efficiency
         setUndoStack(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(activeData))]);
-        setRedoStack([]); // Clear redo stack on new action
+        setRedoStack([]);
     };
 
-    // Initial data fetch
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            // We halen alles in 1 keer op via ons nieuwe endpoint
             const res = await fetch('/api/full-data');
             const data = await res.json();
             setActiveData(data);
@@ -48,20 +44,16 @@ export const AppProvider = ({ children }) => {
         fetchData();
     }, []);
 
-    // --- Helpers ---
+    // --- Helpers (AANGEPAST: Nu via weekUtils voor consistentie rondom jaarwisseling) ---
+    
     const getCurrentWeekId = () => {
-        const now = new Date();
-        const onejan = new Date(now.getFullYear(), 0, 1);
-        const week = Math.ceil((((now.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7);
-        return `${now.getFullYear()}-W${week}`;
+        return getWeekIdFromDate(new Date());
     };
 
     const getRelativeWeekId = (offset) => {
         const date = new Date();
         date.setDate(date.getDate() + (offset * 7));
-        const onejan = new Date(date.getFullYear(), 0, 1);
-        const week = Math.ceil((((date.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7);
-        return `${date.getFullYear()}-W${week}`;
+        return getWeekIdFromDate(date);
     };
 
     // --- Actions ---
@@ -73,7 +65,7 @@ export const AppProvider = ({ children }) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(order),
         });
-        fetchData(); // Refresh data
+        fetchData();
     };
 
     const confirmDelivery = async (delivery) => {
@@ -86,7 +78,7 @@ export const AppProvider = ({ children }) => {
         fetchData();
     };
 
-    const confirmBulkDeliveries = async (deliveries) => {
+    const confirmBatchDeliveries = async (deliveries) => {
         pushToUndoStack();
         for (const { delivery, consumption } of deliveries) {
             await fetch('/api/deliveries', {
@@ -116,14 +108,11 @@ export const AppProvider = ({ children }) => {
     };
 
     const addAdhocDelivery = async (delivery, consumption) => {
-        // Create delivery
         await fetch('/api/deliveries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(delivery),
         });
-
-        // Create consumption linked to it
         if (consumption) {
             await fetch('/api/consumption', {
                 method: 'POST',
@@ -164,27 +153,25 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    const addBulkOrders = async (weekId, orders) => {
+    const addBatchOrders = async (weekId, orders) => {
         try {
             pushToUndoStack();
-            await fetch('/api/orders/bulk', {
+            await fetch('/api/orders/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ weekId, orders }),
             });
             fetchData();
         } catch (error) {
-            console.error("Bulk import failed", error);
-            throw error; // Laat component error afhandelen
+            console.error("Batch import failed", error);
+            throw error;
         }
     };
 
     const exportData = () => {
         const dataStr = JSON.stringify(activeData, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-        
         const exportFileDefaultName = `bestel-backup-${new Date().toISOString().split('T')[0]}.json`;
-        
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
@@ -194,11 +181,7 @@ export const AppProvider = ({ children }) => {
     const importData = async (jsonData, skipUndo = false) => {
         try {
             if (!skipUndo) pushToUndoStack();
-            
-            // For restore, we first need to clear the current state to ensure a clean slate,
-            // otherwise 'restore' (which uses upsert) won't remove deleted items.
             await fetch('/api/clear', { method: 'DELETE' });
-
             const res = await fetch('/api/restore', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -220,25 +203,19 @@ export const AppProvider = ({ children }) => {
 
     const undo = async () => {
         if (undoStack.length === 0) return;
-        
         const prevState = undoStack[undoStack.length - 1];
         const currentState = JSON.parse(JSON.stringify(activeData));
-        
         setUndoStack(prev => prev.slice(0, -1));
         setRedoStack(prev => [...prev, currentState]);
-        
         await importData(prevState, true);
     };
 
     const redo = async () => {
         if (redoStack.length === 0) return;
-        
         const nextState = redoStack[redoStack.length - 1];
         const currentState = JSON.parse(JSON.stringify(activeData));
-        
         setRedoStack(prev => prev.slice(0, -1));
         setUndoStack(prev => [...prev, currentState]);
-        
         await importData(nextState, true);
     };
 
@@ -268,9 +245,9 @@ export const AppProvider = ({ children }) => {
         undo,
         redo,
         addOrder,
-        addBulkOrders,
+        addBatchOrders,
         confirmDelivery,
-        confirmBulkDeliveries,
+        confirmBatchDeliveries,
         registerConsumption,
         addAdhocDelivery,
         updateItem,
