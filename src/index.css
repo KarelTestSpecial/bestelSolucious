@@ -24,7 +24,7 @@ body {
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: var(--font-family);
-  line-height: 1.5;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -38,7 +38,7 @@ body {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.3rem;
   width: 100%;
 }
 
@@ -47,9 +47,9 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: var(--glass-border);
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: var(--card-shadow);
-  padding: 1.5rem;
+  padding: 0.4rem;
 }
 
 h1,
@@ -164,12 +164,12 @@ th {
   width: 100%;
   font-size: 0.9rem;
   border-collapse: collapse;
-  margin-bottom: 1rem;
+  margin-bottom: 0.4rem;
 }
 
 .formal-table th,
 .formal-table td {
-  padding: 0.4rem 0.3rem;
+  padding: 0.17rem 0.3rem;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

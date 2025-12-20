@@ -17,10 +17,10 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '1rem', marginRight: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0)', paddingRight: '0rem', marginRight: '0rem' }}>
                         <button 
                             onClick={undo} 
                             disabled={!canUndo}
@@ -35,7 +35,7 @@ const Dashboard = () => {
                             }}
                             title="Ongedaan maken"
                         >
-                            <Undo2 size={18} />
+                            <Undo2 size={16} />
                         </button>
                         <button 
                             onClick={redo} 
@@ -51,12 +51,12 @@ const Dashboard = () => {
                             }}
                             title="Opnieuw uitvoeren"
                         >
-                            <Redo2 size={18} />
+                            <Redo2 size={16} />
                         </button>
                     </div>
 
                     <button onClick={() => setActiveModal('order')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Plus size={18} /> Nieuwe Bestelling
+                        <Plus size={10} /> Nieuwe Bestelling
                     </button>
                     <button onClick={() => setActiveModal('delivery')} className="badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         Levering Bevestigen
@@ -68,7 +68,7 @@ const Dashboard = () => {
             {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
-            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
                 {timeline.map((item) => (
                     <WeeklyCard key={item.weekId} data={item} onAddAdhoc={() => setActiveModal('consumption')} />
                 ))}
@@ -155,13 +155,13 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
     const isCurrent = offset === 0;
 
     return (
-        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '1rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0rem' }}>
                 <h3 style={{ margin: 0 }}>
                     Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Besteld: <span style={{ color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</span>
                     </div>
@@ -171,11 +171,11 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
                         Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
                     </div>
-                     <button
+                      <button
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                         style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
                         title="Scroll naar boven"
-                    >
+                      >
                         <ArrowUpCircle size={22} />
                     </button>
                 </div>
@@ -212,7 +212,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
                                             title="Verwijder bestelling"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={10} />
                                         </button>
                                     </td>
                                 </tr>
@@ -227,7 +227,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
-                        {isCurrent && <button onClick={onAddAdhoc} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>}
+                        {isCurrent && <button onClick={onAddAdhoc} style={{ padding: '5px 17px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>}
                     </div>
                     <table className="formal-table">
                         <thead>
@@ -254,7 +254,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
                                             title="Verwijder levering"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={11} />
                                         </button>
                                     </td>
                                 </tr>
@@ -290,7 +290,7 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                     key={c.id}
                                     style={{
                                         backgroundColor: isCarriedOver ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                                        borderTop: isCarriedOver ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                                        borderTop: isCarriedOver ? '1px solid rgba(255, 255, 255, 0)' : 'none'
                                     }}
                                 >
                                     <td>{c.displayName}</td>
@@ -298,8 +298,8 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
                                     </td>
                                     <td>
-                                        <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                                            <span>{c.weeksSincePurchase}/</span>
+                                        <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                            <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
                                             <EditableCell
                                                 value={c.effDuration ?? (c.estDuration || '---')}
                                                 type={c.effDuration ? 'number' : 'text'}

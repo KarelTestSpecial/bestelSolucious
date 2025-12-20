@@ -12,7 +12,7 @@ function AppContent() {
 
     return (
         <>
-            <nav className="glass-panel" style={{ margin: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
+            <nav className="glass-panel" style={{ margin: '0.1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
                 <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LayoutDashboard size={18} /> Dashboard
                 </button>
