@@ -12,8 +12,19 @@ const HistoryView = () => {
 
     const today = new Date();
     const threeMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 3));
-    const [startDate, setStartDate] = useState(threeMonthsAgo.toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+
+    const [startDate, setStartDate] = useState(
+        localStorage.getItem('historyStartDate') || threeMonthsAgo.toISOString().split('T')[0]
+    );
+    const [endDate, setEndDate] = useState(
+        localStorage.getItem('historyEndDate') || today.toISOString().split('T')[0]
+    );
+
+    // Save date changes to localStorage
+    useEffect(() => {
+        localStorage.setItem('historyStartDate', startDate);
+        localStorage.setItem('historyEndDate', endDate);
+    }, [startDate, endDate]);
 
     useEffect(() => {
         const fetchData = async () => {
