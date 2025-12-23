@@ -12,8 +12,19 @@ const HistoryView = () => {
 
     const today = new Date();
     const threeMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 3));
-    const [startDate, setStartDate] = useState(threeMonthsAgo.toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+
+    const [startDate, setStartDate] = useState(
+        localStorage.getItem('historyStartDate') || threeMonthsAgo.toISOString().split('T')[0]
+    );
+    const [endDate, setEndDate] = useState(
+        localStorage.getItem('historyEndDate') || today.toISOString().split('T')[0]
+    );
+
+    // Save date changes to localStorage
+    useEffect(() => {
+        localStorage.setItem('historyStartDate', startDate);
+        localStorage.setItem('historyEndDate', endDate);
+    }, [startDate, endDate]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -90,9 +101,9 @@ const HistoryView = () => {
                     </div>
                     <div className="glass-panel" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Calendar size={18} color="var(--text-muted)" />
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none' }} />
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
                         <span>-</span>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none' }} />
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
                     </div>
                     <div style={{ flexGrow: 1 }}></div>
                     <div className="glass-panel" style={{ padding: '0.5rem' }}>

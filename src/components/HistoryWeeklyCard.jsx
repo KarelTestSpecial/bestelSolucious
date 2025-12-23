@@ -27,13 +27,12 @@ const HistoryWeeklyCard = ({ weekId, weekData, viewType }) => {
 
         return (
             <div key={item.id} className="history-item-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                    <Calendar size={14} />
-                    <span>{date}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span>{date} </span>
+                    <strong style={{ flex: 1, marginLeft: '1rem' }}>{title} </strong>
+                    <span style={{ color: 'var(--text-muted)'}}>{details} </span>
+                    <strong style={{ marginLeft: '1rem', minWidth: '80px', textAlign: 'right' }}>{value}</strong>
                 </div>
-                <strong style={{ flex: 1, marginLeft: '1rem' }}>{title}</strong>
-                <span style={{ color: 'var(--text-muted)'}}>{details}</span>
-                <strong style={{ marginLeft: '1rem', minWidth: '80px', textAlign: 'right' }}>{value}</strong>
             </div>
         );
     };
