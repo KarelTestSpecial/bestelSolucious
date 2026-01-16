@@ -62,3 +62,16 @@ export const getWeekIdFromDate = (dateInput) => {
     // Return array of year and week number
     return `${d.getUTCFullYear()}-W${weekNo}`;
 };
+
+export const getWeekIdFromAbs = (absWeek) => {
+    const refDate = new Date(2020, 0, 6, 12, 0, 0, 0);
+    const targetDate = new Date(refDate.getTime() + (absWeek * 7 * 24 * 60 * 60 * 1000));
+    const year = targetDate.getFullYear();
+    
+    // Calculate ISO week number
+    const startOfYear = new Date(year, 0, 1);
+    const days = Math.floor((targetDate - startOfYear) / (24 * 60 * 60 * 1000));
+    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+    
+    return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+};

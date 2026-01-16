@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
-import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday } from '../utils/weekUtils';
+import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday, parseWeekId } from '../utils/weekUtils';
 import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2, ArrowUpCircle } from 'lucide-react';
 import OrderForm from './OrderForm';
 import DeliveryForm from './DeliveryForm';
@@ -61,6 +61,7 @@ const Dashboard = () => {
                     <button onClick={() => setActiveModal('delivery')} className="badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         Levering Bevestigen
                     </button>
+                    <button onClick={() => setActiveModal('consumption')} style={{ padding: '5px 17px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>
                 </div>
             </header>
 
@@ -134,9 +135,13 @@ const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2
         );
     }
 
+    const displayValue = type === 'date' && value && value.includes('-W') 
+        ? parseWeekId(value).week 
+        : (type === 'number' && typeof value === 'number' ? value.toFixed(precision) : value);
+
     return (
         <span onClick={handleStartEdit} style={{ cursor: 'pointer', borderBottom: '1px dashed var(--accent-color)' }}>
-            {type === 'number' && typeof value === 'number' ? value.toFixed(precision) : value}{suffix}
+            {displayValue}{suffix}
         </span>
     );
 };
@@ -149,10 +154,13 @@ EditableCell.propTypes = {
     precision: PropTypes.number,
 };
 
-const WeeklyCard = ({ data, onAddAdhoc }) => {
-    const { updateItem, deleteItem } = useAppContext();
+const WeeklyCard = ({ data }) => {
+    const { updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
     const { weekId, offset, stats } = data;
     const isCurrent = offset === 0;
+    
+    const [newOrder, setNewOrder] = useState(null);
+    const [newDelivery, setNewDelivery] = useState(null);
 
     return (
         <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
@@ -181,12 +189,15 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', flexWrap: 'wrap' }}>
                 {/* 1. Bestellingen */}
-                <section>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '0rem' }}>
-                        <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
-                    </h4>
+                <section style={{ flex: 1, minWidth: '300px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
+                            <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
+                        </h4>
+                        <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
+                    </div>
                     <table className="formal-table">
                         <thead>
                             <tr>
@@ -216,18 +227,94 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         </button>
                                     </td>
                                 </tr>
-                            )) : <tr><td colSpan="6" className="empty-text">Geen bestellingen</td></tr>}
+                            )) : null}
+                            {newOrder && (
+                                <tr style={{ backgroundColor: 'rgba(110, 64, 201, 0.1)' }}>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            placeholder="Product naam"
+                                            value={newOrder.name}
+                                            onChange={e => setNewOrder({ ...newOrder, name: e.target.value })}
+                                            autoFocus
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            value={newOrder.qty}
+                                            onChange={e => setNewOrder({ ...newOrder, qty: parseInt(e.target.value) || 1 })}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={newOrder.price}
+                                            onChange={e => setNewOrder({ ...newOrder, price: e.target.value })}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            value={newOrder.estDuration}
+                                            onChange={e => setNewOrder({ ...newOrder, estDuration: parseInt(e.target.value) || 1 })}
+                                        />
+                                    </td>
+                                    <td><strong>€{(newOrder.qty * (parseFloat(newOrder.price) || 0)).toFixed(2)}</strong></td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button 
+                                                onClick={() => {
+                                                    if (newOrder.name && newOrder.price) {
+                                                        const productId = crypto.randomUUID();
+                                                        addOrder({
+                                                            productId,
+                                                            name: newOrder.name,
+                                                            price: parseFloat(newOrder.price),
+                                                            qty: newOrder.qty,
+                                                            estDuration: newOrder.estDuration,
+                                                            weekId: weekId
+                                                        });
+                                                        setNewOrder(null);
+                                                    }
+                                                }}
+                                                style={{ background: 'var(--success-color)', color: 'white', padding: '4px', border: 'none', cursor: 'pointer' }}
+                                                title="Opslaan"
+                                            >
+                                                ✓
+                                            </button>
+                                            <button 
+                                                onClick={() => setNewOrder(null)}
+                                                style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
+                                                title="Annuleren"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                            {stats.orders.length === 0 && !newOrder && <tr><td colSpan="6" className="empty-text">Geen bestellingen</td></tr>}
                         </tbody>
                     </table>
                 </section>
                 
                 {/* 2. Effectieve Leveringen */}
-                <section>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
-                        {isCurrent && <button onClick={onAddAdhoc} style={{ padding: '5px 17px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>}
+                        {isCurrent && <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>}
                     </div>
                     <table className="formal-table">
                         <thead>
@@ -258,13 +345,89 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                                         </button>
                                     </td>
                                 </tr>
-                            )) : <tr><td colSpan="6" className="empty-text">Geen leveringen</td></tr>}
+                            )) : null}
+                            {newDelivery && (
+                                <tr style={{ backgroundColor: 'rgba(46, 204, 113, 0.1)' }}>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            placeholder="Product naam"
+                                            value={newDelivery.name}
+                                            onChange={e => setNewDelivery({ ...newDelivery, name: e.target.value })}
+                                            autoFocus
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            value={newDelivery.qty}
+                                            onChange={e => setNewDelivery({ ...newDelivery, qty: parseInt(e.target.value) || 1 })}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={newDelivery.price}
+                                            onChange={e => setNewDelivery({ ...newDelivery, price: e.target.value })}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="input-field"
+                                            style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
+                                            type="number"
+                                            value={newDelivery.estDuration}
+                                            onChange={e => setNewDelivery({ ...newDelivery, estDuration: parseInt(e.target.value) || 1 })}
+                                        />
+                                    </td>
+                                    <td><strong>€{(newDelivery.qty * (parseFloat(newDelivery.price) || 0)).toFixed(2)}</strong></td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button 
+                                                onClick={() => {
+                                                    if (newDelivery.name && newDelivery.price) {
+                                                        const productId = crypto.randomUUID();
+                                                        confirmDelivery({
+                                                            productId,
+                                                            name: newDelivery.name,
+                                                            price: parseFloat(newDelivery.price),
+                                                            qty: newDelivery.qty,
+                                                            estDuration: newDelivery.estDuration,
+                                                            weekId: weekId
+                                                        });
+                                                        setNewDelivery(null);
+                                                    }
+                                                }}
+                                                style={{ background: 'var(--success-color)', color: 'white', padding: '4px', border: 'none', cursor: 'pointer' }}
+                                                title="Opslaan"
+                                            >
+                                                ✓
+                                            </button>
+                                            <button 
+                                                onClick={() => setNewDelivery(null)}
+                                                style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
+                                                title="Annuleren"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                            {stats.deliveries.length === 0 && !newDelivery && <tr><td colSpan="6" className="empty-text">Geen leveringen</td></tr>}
                         </tbody>
                     </table>
                 </section>
 
                 {/* 3. In Effectief Verbruik */}
-                <section>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0 }}>
                             <TrendingUp size={16} /> Effectief Verbruik
@@ -282,7 +445,12 @@ const WeeklyCard = ({ data, onAddAdhoc }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {stats.consumptionInWeek.length > 0 ? stats.consumptionInWeek.map(c => {
+                            {stats.consumptionInWeek.length > 0 ? [...stats.consumptionInWeek].sort((a, b) => {
+                                // Sort by weeksSincePurchase: items with weeksSincePurchase === 1 first, then others
+                                if (a.weeksSincePurchase === 1 && b.weeksSincePurchase !== 1) return -1;
+                                if (a.weeksSincePurchase !== 1 && b.weeksSincePurchase === 1) return 1;
+                                return 0;
+                            }).map(c => {
                                 const isCompleted = c.completed && c.effDuration > 0;
                                 const isCarriedOver = c.weeksSincePurchase > 1;
                                 return (
@@ -374,7 +542,7 @@ WeeklyCard.propTypes = {
             inventoryAtEnd: PropTypes.array,
         }).isRequired,
     }).isRequired,
-    onAddAdhoc: PropTypes.func.isRequired,
+    
 };
 
 export default Dashboard;

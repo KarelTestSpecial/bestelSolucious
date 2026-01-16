@@ -8,16 +8,6 @@ import PropTypes from 'prop-types';
 const DeliveryForm = ({ onClose }) => {
   const { activeData, confirmBatchDeliveries, getCurrentWeekId } = useAppContext();
 
-  // We zoeken naar openstaande bestellingen die nog niet geleverd zijn
-  const pendingOrders = activeData.orders.filter(order => {
-    const isDelivered = activeData.deliveries.some(d => d.orderId === order.id);
-    return !isDelivered;
-  });
-
-  console.log("Active Orders:", activeData.orders);
-  console.log("Active Deliveries:", activeData.deliveries);
-  console.log("Pending Orders:", pendingOrders);
-
   const getToday = () => new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(getToday());
   const [weekId, setWeekId] = useState(getCurrentWeekId());
@@ -27,6 +17,17 @@ const DeliveryForm = ({ onClose }) => {
         setWeekId(getWeekIdFromDate(date));
     }
   }, [date]);
+
+  // We zoeken naar openstaande bestellingen die nog niet geleverd zijn
+  const pendingOrders = activeData.orders.filter(order => {
+    const isDelivered = activeData.deliveries.some(d => d.orderId === order.id);
+    const isInSelectedWeek = order.weekId === weekId;
+    return !isDelivered && isInSelectedWeek;
+  });
+
+  console.log("Active Orders:", activeData.orders);
+  console.log("Active Deliveries:", activeData.deliveries);
+  console.log("Pending Orders:", pendingOrders);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

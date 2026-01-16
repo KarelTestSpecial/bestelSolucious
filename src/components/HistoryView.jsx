@@ -5,8 +5,7 @@ import { groupDataByWeek } from '../utils/historyUtils';
 import HistoryWeeklyCard from './HistoryWeeklyCard';
 
 const HistoryView = () => {
-    const [view, setView] = useState('deliveries');
-    const [data, setData] = useState([]);
+    const [data, setData] = useState({ orders: [], deliveries: [], verbruik: [] });
     const [pagination, setPagination] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -27,55 +26,73 @@ const HistoryView = () => {
     }, [startDate, endDate]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            const endpoint = `/api/history/${view}`;
+        const fetchAllData = async () => {
             const params = new URLSearchParams({
                 page: currentPage,
                 startDate,
                 endDate,
-                limit: 10
+                limit: 50
             });
 
             try {
-                const response = await fetch(`${endpoint}?${params.toString()}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const result = await response.json();
-                setData(result.items || []);
-                setPagination(result.pagination || {});
+                const [ordersRes, deliveriesRes, verbruikRes] = await Promise.all([
+                    fetch(`/api/history/orders?${params.toString()}`),
+                    fetch(`/api/history/deliveries?${params.toString()}`),
+                    fetch(`/api/history/verbruik?${params.toString()}`)
+                ]);
+
+                const ordersResult = await ordersRes.json();
+                const deliveriesResult = await deliveriesRes.json();
+                const verbruikResult = await verbruikRes.json();
+
+                setData({
+                    orders: ordersResult.items || [],
+                    deliveries: deliveriesResult.items || [],
+                    verbruik: verbruikResult.items || []
+                });
+                
+                // Use pagination from the first successful response
+                setPagination(ordersResult.pagination || {});
             } catch (error) {
                 console.error("Failed to fetch history:", error);
-                setData([]);
+                setData({ orders: [], deliveries: [], verbruik: [] });
                 setPagination({});
             }
         };
 
         if (startDate && endDate) {
-            fetchData();
+            fetchAllData();
         }
-    }, [view, currentPage, startDate, endDate]);
+    }, [currentPage, startDate, endDate]);
 
     const handleDownload = () => {
-        const headers = {
-            orders: ["Datum", "Week", "Product", "Aantal", "Prijs", "Totaal"],
-            deliveries: ["Datum", "Week", "Product", "Aantal", "Prijs", "Totaal"],
-            verbruik: ["Datum", "Week", "Product", "Wekelijkse Kost", "Totaal Kost"]
-        };
+        // Combine all data types for download
+        const allItems = [
+            ...data.orders.map(item => ({ ...item, type: 'Bestelling' })),
+            ...data.deliveries.map(item => ({ ...item, type: 'Levering' })),
+            ...data.verbruik.map(item => ({ ...item, type: 'Verbruik' }))
+        ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        const rows = data.map(item => {
+        const headers = ["Type", "Datum", "Week", "Product", "Details", "Totaal"];
+        
+        const rows = allItems.map(item => {
             const date = new Date(item.createdAt).toLocaleDateString('nl-BE');
-            switch(view) {
-                case 'orders':
-                case 'deliveries':
-                    return [date, item.weekId, item.name, item.qty, item.price, item.qty * item.price];
-                case 'verbruik':
-                    return [date, item.weekId, item.name, item.weeklyCost, item.cost];
-                default:
-                    return [];
+            let details = '';
+            let total = '';
+            
+            if (item.type === 'Bestelling' || item.type === 'Levering') {
+                details = `${item.qty} x €${(item.price || 0).toFixed(2)}`;
+                total = `€${(item.qty * (item.price || 0)).toFixed(2)}`;
+            } else if (item.type === 'Verbruik') {
+                details = `Kost per week: €${(item.weeklyCost || 0).toFixed(2)}`;
+                total = `€${(item.cost || 0).toFixed(2)}`;
             }
+            
+            return [item.type, date, item.weekId, item.name, details, total];
         });
 
         const tsvContent = [
-            headers[view].join('\t'),
+            headers.join('\t'),
             ...rows.map(row => row.join('\t'))
         ].join('\n');
 
@@ -83,7 +100,7 @@ const HistoryView = () => {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `historiek_${view}_${startDate}_tot_${endDate}.tsv`);
+        link.setAttribute("download", `historiek_${startDate}_tot_${endDate}.tsv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -94,11 +111,6 @@ const HistoryView = () => {
             <header style={{ marginBottom: '2rem' }}>
                 <h1>Historiek & Archief</h1>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="glass-panel" style={{ padding: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => { setView('deliveries'); setCurrentPage(1); }} className={view === 'deliveries' ? '' : 'badge-warning'} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>Leveringen</button>
-                        <button onClick={() => { setView('orders'); setCurrentPage(1); }} className={view === 'orders' ? '' : 'badge-warning'} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>Bestellingen</button>
-                        <button onClick={() => { setView('verbruik'); setCurrentPage(1); }} className={view === 'verbruik' ? '' : 'badge-warning'} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>Effectief Verbruik</button>
-                    </div>
                     <div className="glass-panel" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Calendar size={18} color="var(--text-muted)" />
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
@@ -116,9 +128,9 @@ const HistoryView = () => {
             </header>
             <div className="history-content">
                 {
-                    data.length > 0 ? (
+                    (data.orders.length > 0 || data.deliveries.length > 0 || data.verbruik.length > 0) ? (
                         Object.entries(groupDataByWeek(data)).map(([weekId, weekData]) => (
-                            <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} viewType={view} />
+                            <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} />
                         ))
                     ) : (
                         <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>

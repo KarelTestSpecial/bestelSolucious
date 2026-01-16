@@ -2,7 +2,7 @@
 
 # --- 1. CONFIGURATIE ---
 export PATH="/home/kareltestspecial/.config/nvm/versions/node/v22.20.0/bin:/home/kareltestspecial/.local/share/pnpm:$PATH"
-PROJECT_DIR="/home/kareltestspecial/a/bestelSolucious/bestel"
+PROJECT_DIR="/home/kareltestspecial/kdc/bestelSolucious/bestel"
 cd "$PROJECT_DIR" || exit 1
 
 # --- 2. FUNCTIE OM ALLES TE DODEN (RAM PROTECTIE) ---

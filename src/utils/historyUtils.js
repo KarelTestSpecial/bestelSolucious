@@ -1,40 +1,81 @@
 import { getWeekIdFromDate } from './weekUtils';
 
-export const groupDataByWeek = (items) => {
-  if (!items || items.length === 0) {
+export const groupDataByWeek = (data) => {
+  if (!data || (!data.orders && !data.deliveries && !data.verbruik)) {
     return {};
   }
 
-  const grouped = items.reduce((acc, item) => {
-    // Use `createdAt` to ensure consistent week grouping for all historical items.
+  const allWeeks = new Set();
+  
+  // Collect all weekIds from all data types
+  [...(data.orders || []), ...(data.deliveries || []), ...(data.verbruik || [])].forEach(item => {
     const weekId = getWeekIdFromDate(new Date(item.createdAt));
+    allWeeks.add(weekId);
+  });
 
-    if (!acc[weekId]) {
-      acc[weekId] = {
-        items: [],
-        total: 0,
-      };
+  const grouped = {};
+  
+  // Initialize week structure
+  allWeeks.forEach(weekId => {
+    grouped[weekId] = {
+      orders: [],
+      deliveries: [],
+      verbruik: [],
+      totals: {
+        orders: 0,
+        deliveries: 0,
+        verbruik: 0,
+        grandTotal: 0
+      }
+    };
+  });
+
+  // Process orders
+  (data.orders || []).forEach(item => {
+    const weekId = getWeekIdFromDate(new Date(item.createdAt));
+    if (grouped[weekId]) {
+      grouped[weekId].orders.push(item);
+      grouped[weekId].totals.orders += (item.price || 0) * (item.qty || 0);
     }
+  });
 
-    acc[weekId].items.push(item);
+  // Process deliveries
+  (data.deliveries || []).forEach(item => {
+    const weekId = getWeekIdFromDate(new Date(item.createdAt));
+    if (grouped[weekId]) {
+      grouped[weekId].deliveries.push(item);
+      grouped[weekId].totals.deliveries += (item.price || 0) * (item.qty || 0);
+    }
+  });
 
-    // Calculate total based on the item's value (cost, or price * qty)
-    const itemValue = item.cost || (item.price * item.qty) || 0;
-    acc[weekId].total += itemValue;
+  // Process verbruik
+  (data.verbruik || []).forEach(item => {
+    const weekId = getWeekIdFromDate(new Date(item.createdAt));
+    if (grouped[weekId]) {
+      grouped[weekId].verbruik.push(item);
+      grouped[weekId].totals.verbruik += item.cost || 0;
+    }
+  });
 
-    return acc;
-  }, {});
+  // Calculate grand totals for each week
+  Object.keys(grouped).forEach(weekId => {
+    const totals = grouped[weekId].totals;
+    totals.grandTotal = totals.orders + totals.deliveries + totals.verbruik;
+    
+    // Sort items within each type by date, most recent first
+    grouped[weekId].orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    grouped[weekId].deliveries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    grouped[weekId].verbruik.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  });
 
-  // Sort the weeks descending (most recent first)
+  // Sort weeks descending (most recent first)
   const sortedGrouped = Object.keys(grouped)
     .sort()
     .reverse()
     .reduce((obj, key) => {
       obj[key] = grouped[key];
-      // Sort items within the week by date, most recent first
-      obj[key].items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       return obj;
     }, {});
 
-  return sortedGrouped;
+return sortedGrouped;
 };

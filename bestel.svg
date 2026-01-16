@@ -1,0 +1,21 @@
+<svg width="128" height="128" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 1. De lichte cirkel achtergrond (Pastel Blauw) -->
+  <circle cx="50" cy="50" r="50" fill="#e3f2fd" />
+
+  <!-- Groep voor het icoon: Donkerblauw, afgeronde hoeken -->
+  <g fill="none" stroke="#1565c0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    
+    <!-- Het frame en de mand (één doorlopende lijn voor strakheid) -->
+    <!-- Start bij handvat -> naar beneden -> mandje rond -->
+    <path d="M22 28 h10 l6 34 h36 l6 -26 h-43" />
+    
+    <!-- Verticale spijlen in het mandje (voor herkenbaarheid) -->
+    <path d="M46 36 v26" stroke-width="4" opacity="0.3" />
+    <path d="M60 36 v26" stroke-width="4" opacity="0.3" />
+
+  </g>
+
+  <!-- De wielen (Donker ingekleurd) -->
+  <circle cx="42" cy="74" r="5" fill="#1565c0" />
+  <circle cx="70" cy="74" r="5" fill="#1565c0" />
+</svg>

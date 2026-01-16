@@ -6,6 +6,8 @@ const Inventory = () => {
     const { getInventory } = useInventoryStats();
     const inventoryMap = getInventory();
 
+
+
     return (
         <div className="inventory">
             <h1>Persoonlijke Voorziene voorraad</h1>
@@ -15,7 +17,7 @@ const Inventory = () => {
                     <thead>
                         <tr>
                             <th>Product</th>
-                            <th>Status</th>
+                            <th>Leveringsweek</th>
                             <th>Geleverd</th>
                             <th>Verbruikt</th>
                             <th>Huidige Stock</th>
@@ -30,13 +32,14 @@ const Inventory = () => {
                             <tr key={item.id}>
                                 <td><strong>{item.name}</strong></td>
                                 <td>
-                                    {item.stock <= 0 ? (
-                                        <span className="badge badge-danger">OP</span>
-                                    ) : item.stock < 2 ? (
-                                        <span className="badge badge-warning">LAAG</span>
-                                    ) : (
-                                        <span className="badge badge-success">OK</span>
-                                    )}
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                        {item.deliveryWeek}
+                                        {item.weeksSincePurchase && item.estDuration && (
+                                            <span style={{ display: 'block', fontSize: '0.8rem' }}>
+                                                ({item.weeksSincePurchase}w/{item.estDuration}w)
+                                            </span>
+                                        )}
+                                    </span>
                                 </td>
                                 <td>{item.delivered}</td>
                                 <td>{item.consumed}</td>
@@ -44,11 +47,6 @@ const Inventory = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Package size={16} color="var(--accent-color)" />
                                         {item.stock} stuks
-                                        {item.weeksSincePurchase && item.estDuration && (
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                                ({item.weeksSincePurchase}w / {item.estDuration}w)
-                                            </span>
-                                        )}
                                     </div>
                                 </td>
                             </tr>
