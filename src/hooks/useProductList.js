@@ -69,7 +69,7 @@ export const useProductList = () => {
 
             return {
                 id: product.id,
-                name: displayName,
+                name: displayName.toLowerCase(),
                 stock: currentStock,
                 price: recentPrice,
                 weeksOfSupply: weeksOfSupply
