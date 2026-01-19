@@ -1,32 +1,29 @@
 `STARTEN.md`
 
-===========================
-Starten maar! (Samenvatting)
-============================
+================================
+De Extensie Starten
+================================
 
-Je hebt twee manieren om de app te starten op je Chromebook.
+Dit project is een Chrome-extensie die de applicatie in een nieuw tabblad opent.
 
-MANIER 1: Het Automatische Script (Snelst)
-------------------------------------------
-Als je de snelkoppeling hebt ingesteld, klik je gewoon op het icoon in je launcher.
-Of typ in de terminal:
+## Installatie en Gebruik
 
-./bestel.sh
+1.  **Installeer de afhankelijkheden**:
+    Als je dit de eerste keer doet, installeer dan de nodige packages.
+    ```bash
+    pnpm install
+    ```
 
+2.  **Bouw de extensie**:
+    Voer dit commando uit om de bestanden voor de extensie te genereren.
+    ```bash
+    pnpm run build
+    ```
+    De uitvoer komt in de `dist`-map te staan.
 
-MANIER 2: Handmatig (Voor onderhoud/updates)
---------------------------------------------
-Als je updates hebt gedaan (zoals `pnpm install`), gebruik dan deze volgorde:
+3.  **Laad in Chrome**:
+    *   Open Chrome en ga naar `chrome://extensions`.
+    *   Zet "Developer mode" aan.
+    *   Klik op "Load unpacked" en selecteer de `dist`-map.
 
-1. Installeer updates (indien nodig):
-   pnpm install
-   pnpm exec prisma generate
-
-2. Start de Backend (Terminal 1):
-   node server/index.js
-
-3. Start de Frontend (Terminal 2):
-   pnpm dev
-
-4. Open je browser op:
-   http://localhost:5173
+Nu kun je de extensie gebruiken door op het icoon in je browser te klikken. De applicatie wordt geopend in een nieuw tabblad.
