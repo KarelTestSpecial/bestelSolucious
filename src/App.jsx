@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 import Dashboard from './components/Dashboard';
-import Inventory from './components/Inventory';
+import ProductList from './components/ProductList';
 import DataManager from './components/DataManager';
 import HistoryView from './components/HistoryView';
 import './index.css';
@@ -17,7 +17,7 @@ function AppContent() {
                     <LayoutDashboard size={18} /> Dashboard
                 </button>
                 <button onClick={() => setActiveTab('inventory')} className={activeTab === 'inventory' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Archive size={18} /> Voorziene voorraad
+                    <Archive size={18} /> Productenlijst
                 </button>
                 <button onClick={() => setActiveTab('history')} className={activeTab === 'history' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <History size={18} /> Historiek
@@ -29,7 +29,7 @@ function AppContent() {
 
             <main className="container animate-fade-in">
                 {activeTab === 'dashboard' && <Dashboard />}
-                {activeTab === 'inventory' && <Inventory />}
+                {activeTab === 'inventory' && <ProductList />}
                 {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'data' && <DataManager />}
             </main>
