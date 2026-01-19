@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- 1. CONFIGURATIE ---
-export PATH="/home/kareltestspecial/.config/nvm/versions/node/v22.20.0/bin:/home/kareltestspecial/.local/share/pnpm:$PATH"
+export PATH="/home/kareltestspecial/.config/nvm/versions/node/v24.13.0/bin:$PATH"
 PROJECT_DIR="/home/kareltestspecial/kdc/bestelSolucious/bestel"
 cd "$PROJECT_DIR" || exit 1
 
@@ -40,7 +40,7 @@ echo "🚀 Servers starten..."
 ) &
 
 # Start de applicatie (Dit houdt het script levend)
-/home/kareltestspecial/.local/share/pnpm/pnpm dev:all --raw
+pnpm dev:all --raw
 
 # Het script komt hier pas als pnpm stopt.
 # De 'trap' functie hierboven handelt de rest af.
