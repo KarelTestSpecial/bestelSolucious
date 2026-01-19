@@ -36,9 +36,9 @@ const HistoryView = () => {
 
             try {
                 const [ordersRes, deliveriesRes, verbruikRes] = await Promise.all([
-                    fetch(`/api/history/orders?${params.toString()}`),
-                    fetch(`/api/history/deliveries?${params.toString()}`),
-                    fetch(`/api/history/verbruik?${params.toString()}`)
+                    fetch(`http://localhost:3000/api/history/orders?${params.toString()}`),
+                    fetch(`http://localhost:3000/api/history/deliveries?${params.toString()}`),
+                    fetch(`http://localhost:3000/api/history/verbruik?${params.toString()}`)
                 ]);
 
                 const ordersResult = await ordersRes.json();

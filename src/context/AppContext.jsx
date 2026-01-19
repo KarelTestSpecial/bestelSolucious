@@ -30,7 +30,7 @@ export const AppProvider = ({ children }) => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const res = await fetch('/api/full-data');
+            const res = await fetch('http://localhost:3000/api/full-data');
             const data = await res.json();
             setActiveData(data);
         } catch (error) {
@@ -60,7 +60,7 @@ export const AppProvider = ({ children }) => {
 
     const addOrder = async (order) => {
         pushToUndoStack();
-        await fetch('/api/orders', {
+        await fetch('http://localhost:3000/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(order),
@@ -70,7 +70,7 @@ export const AppProvider = ({ children }) => {
 
     const confirmDelivery = async (delivery) => {
         pushToUndoStack();
-        await fetch('/api/deliveries', {
+        await fetch('http://localhost:3000/api/deliveries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(delivery),
@@ -81,13 +81,13 @@ export const AppProvider = ({ children }) => {
     const confirmBatchDeliveries = async (deliveries) => {
         pushToUndoStack();
         for (const { delivery, consumption } of deliveries) {
-            await fetch('/api/deliveries', {
+            await fetch('http://localhost:3000/api/deliveries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(delivery),
             });
             if (consumption) {
-                await fetch('/api/consumption', {
+                await fetch('http://localhost:3000/api/consumption', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(consumption),
@@ -99,7 +99,7 @@ export const AppProvider = ({ children }) => {
 
     const registerConsumption = async (consumptionItem) => {
         pushToUndoStack();
-        await fetch('/api/consumption', {
+        await fetch('http://localhost:3000/api/consumption', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(consumptionItem),
@@ -108,13 +108,13 @@ export const AppProvider = ({ children }) => {
     };
 
     const addAdhocDelivery = async (delivery, consumption) => {
-        await fetch('/api/deliveries', {
+        await fetch('http://localhost:3000/api/deliveries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(delivery),
         });
         if (consumption) {
-            await fetch('/api/consumption', {
+            await fetch('http://localhost:3000/api/consumption', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(consumption),
@@ -124,12 +124,14 @@ export const AppProvider = ({ children }) => {
     };
 
     const updateItem = async (type, id, updates) => {
-        let endpoint = '';
-        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
-        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
-        if (type === 'order') endpoint = `/api/orders/${id}`;
+        const endpointMap = {
+            consumption: `consumption/${id}`,
+            delivery: `deliveries/${id}`,
+            order: `orders/${id}`,
+        };
 
-        if (endpoint) {
+        if (endpointMap[type]) {
+            const endpoint = `http://localhost:3000/api/${endpointMap[type]}`;
             pushToUndoStack();
             await fetch(endpoint, {
                 method: 'PATCH',
@@ -141,12 +143,14 @@ export const AppProvider = ({ children }) => {
     };
 
     const deleteItem = async (type, id) => {
-        let endpoint = '';
-        if (type === 'order') endpoint = `/api/orders/${id}`;
-        if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
-        if (type === 'consumption') endpoint = `/api/consumption/${id}`;
+        const endpointMap = {
+            order: `orders/${id}`,
+            delivery: `deliveries/${id}`,
+            consumption: `consumption/${id}`,
+        };
 
-        if (endpoint) {
+        if (endpointMap[type]) {
+            const endpoint = `http://localhost:3000/api/${endpointMap[type]}`;
             pushToUndoStack();
             await fetch(endpoint, { method: 'DELETE' });
             fetchData();
@@ -156,7 +160,7 @@ export const AppProvider = ({ children }) => {
     const addBatchOrders = async (weekId, orders) => {
         try {
             pushToUndoStack();
-            await fetch('/api/orders/batch', {
+            await fetch('http://localhost:3000/api/orders/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ weekId, orders }),
@@ -181,8 +185,8 @@ export const AppProvider = ({ children }) => {
     const importData = async (jsonData, skipUndo = false) => {
         try {
             if (!skipUndo) pushToUndoStack();
-            await fetch('/api/clear', { method: 'DELETE' });
-            const res = await fetch('/api/restore', {
+            await fetch('http://localhost:3000/api/clear', { method: 'DELETE' });
+            const res = await fetch('http://localhost:3000/api/restore', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(jsonData),
@@ -222,7 +226,7 @@ export const AppProvider = ({ children }) => {
     const clearDatabase = async () => {
         try {
             pushToUndoStack();
-            const res = await fetch('/api/clear', { method: 'DELETE' });
+            const res = await fetch('http://localhost:3000/api/clear', { method: 'DELETE' });
             const result = await res.json();
             if (result.success) {
                 fetchData();
