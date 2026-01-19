@@ -21,4 +21,4 @@ Dit project is een Chrome-extensie voor het beheren van bestellingen en voorraad
     *   Klik op de knop **Load unpacked** (uitgepakte extensie laden).
     *   Selecteer de `dist`-map in de hoofdmap van dit project.
 
-De extensie is nu klaar voor gebruik. Je kunt op het icoon in de werkbalk klikken om de pop-up te openen. Alle data wordt lokaal opgeslagen in je browser.
+De extensie is nu klaar voor gebruik. Klik op het icoon in de werkbalk om de applicatie in een nieuw tabblad te openen. Alle data wordt lokaal opgeslagen in je browser.

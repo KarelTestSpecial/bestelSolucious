@@ -4,7 +4,7 @@
 De Extensie Starten
 ================================
 
-Dit project is nu een Chrome-extensie en heeft geen aparte webserver meer nodig.
+Dit project is een Chrome-extensie die de applicatie in een nieuw tabblad opent.
 
 ## Installatie en Gebruik
 
@@ -26,4 +26,4 @@ Dit project is nu een Chrome-extensie en heeft geen aparte webserver meer nodig.
     *   Zet "Developer mode" aan.
     *   Klik op "Load unpacked" en selecteer de `dist`-map.
 
-Nu kun je de extensie gebruiken door op het icoon in je browser te klikken.
+Nu kun je de extensie gebruiken door op het icoon in je browser te klikken. De applicatie wordt geopend in een nieuw tabblad.

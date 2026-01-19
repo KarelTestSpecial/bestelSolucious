@@ -3,8 +3,11 @@
   "name": "Bestel Tracker",
   "version": "1.0",
   "description": "Een extensie om bestellingen en voorraad te beheren.",
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "popup.html",
+    "default_title": "Bestel Tracker",
     "default_icon": {
       "16": "images/icon16.png",
       "48": "images/icon48.png",

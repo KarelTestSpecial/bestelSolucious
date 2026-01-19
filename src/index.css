@@ -26,8 +26,6 @@ body {
   font-family: var(--font-family);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  min-width: 800px;
-  padding: 1rem;
 }
 
 #root {

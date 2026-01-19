@@ -13,7 +13,7 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, 'popup.html'),
+        index: resolve(__dirname, 'index.html'),
       },
       output: {
         entryFileNames: 'assets/[name].js',
