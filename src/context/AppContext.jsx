@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { getWeekIdFromDate } from '../utils/weekUtils'; // AANGEPAST: Importeer de centrale logica
+import { getWeekIdFromDate } from '../utils/weekUtils';
+import * as storage from '../utils/storage';
 
 const AppContext = createContext();
 
@@ -17,7 +18,6 @@ export const AppProvider = ({ children }) => {
         deliveries: [],
         consumption: []
     });
-    const [archive] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [undoStack, setUndoStack] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
@@ -30,8 +30,7 @@ export const AppProvider = ({ children }) => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const res = await fetch('http://localhost:3000/api/full-data');
-            const data = await res.json();
+            const data = await storage.getData();
             setActiveData(data);
         } catch (error) {
             console.error("Failed to fetch initial data", error);
@@ -44,11 +43,7 @@ export const AppProvider = ({ children }) => {
         fetchData();
     }, []);
 
-    // --- Helpers (AANGEPAST: Nu via weekUtils voor consistentie rondom jaarwisseling) ---
-    
-    const getCurrentWeekId = () => {
-        return getWeekIdFromDate(new Date());
-    };
+    const getCurrentWeekId = () => getWeekIdFromDate(new Date());
 
     const getRelativeWeekId = (offset) => {
         const date = new Date();
@@ -56,42 +51,24 @@ export const AppProvider = ({ children }) => {
         return getWeekIdFromDate(date);
     };
 
-    // --- Actions ---
-
     const addOrder = async (order) => {
         pushToUndoStack();
-        await fetch('http://localhost:3000/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(order),
-        });
+        await storage.addItem('orders', order);
         fetchData();
     };
 
     const confirmDelivery = async (delivery) => {
         pushToUndoStack();
-        await fetch('http://localhost:3000/api/deliveries', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(delivery),
-        });
+        await storage.addItem('deliveries', delivery);
         fetchData();
     };
 
     const confirmBatchDeliveries = async (deliveries) => {
         pushToUndoStack();
         for (const { delivery, consumption } of deliveries) {
-            await fetch('http://localhost:3000/api/deliveries', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(delivery),
-            });
+            await storage.addItem('deliveries', delivery);
             if (consumption) {
-                await fetch('http://localhost:3000/api/consumption', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(consumption),
-                });
+                await storage.addItem('consumption', consumption);
             }
         }
         fetchData();
@@ -99,77 +76,36 @@ export const AppProvider = ({ children }) => {
 
     const registerConsumption = async (consumptionItem) => {
         pushToUndoStack();
-        await fetch('http://localhost:3000/api/consumption', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(consumptionItem),
-        });
+        await storage.addItem('consumption', consumptionItem);
         fetchData();
     };
 
     const addAdhocDelivery = async (delivery, consumption) => {
-        await fetch('http://localhost:3000/api/deliveries', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(delivery),
-        });
+        pushToUndoStack();
+        await storage.addItem('deliveries', delivery);
         if (consumption) {
-            await fetch('http://localhost:3000/api/consumption', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(consumption),
-            });
+            await storage.addItem('consumption', consumption);
         }
         fetchData();
     };
 
     const updateItem = async (type, id, updates) => {
-        const endpointMap = {
-            consumption: `consumption/${id}`,
-            delivery: `deliveries/${id}`,
-            order: `orders/${id}`,
-        };
-
-        if (endpointMap[type]) {
-            const endpoint = `http://localhost:3000/api/${endpointMap[type]}`;
-            pushToUndoStack();
-            await fetch(endpoint, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            });
-            fetchData();
-        }
+        pushToUndoStack();
+        await storage.updateItem(type, id, updates);
+        fetchData();
     };
 
     const deleteItem = async (type, id) => {
-        const endpointMap = {
-            order: `orders/${id}`,
-            delivery: `deliveries/${id}`,
-            consumption: `consumption/${id}`,
-        };
-
-        if (endpointMap[type]) {
-            const endpoint = `http://localhost:3000/api/${endpointMap[type]}`;
-            pushToUndoStack();
-            await fetch(endpoint, { method: 'DELETE' });
-            fetchData();
-        }
+        pushToUndoStack();
+        await storage.deleteItem(type, id);
+        fetchData();
     };
 
     const addBatchOrders = async (weekId, orders) => {
-        try {
-            pushToUndoStack();
-            await fetch('http://localhost:3000/api/orders/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ weekId, orders }),
-            });
-            fetchData();
-        } catch (error) {
-            console.error("Batch import failed", error);
-            throw error;
-        }
+        pushToUndoStack();
+        const ordersWithWeekId = orders.map(o => ({ ...o, weekId }));
+        await storage.addBatch('orders', ordersWithWeekId);
+        fetchData();
     };
 
     const exportData = () => {
@@ -185,19 +121,9 @@ export const AppProvider = ({ children }) => {
     const importData = async (jsonData, skipUndo = false) => {
         try {
             if (!skipUndo) pushToUndoStack();
-            await fetch('http://localhost:3000/api/clear', { method: 'DELETE' });
-            const res = await fetch('http://localhost:3000/api/restore', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(jsonData),
-            });
-            const result = await res.json();
-            if (result.success) {
-                fetchData();
-                return true;
-            } else {
-                throw new Error(result.error);
-            }
+            await storage.importData(jsonData);
+            fetchData();
+            return true;
         } catch (error) {
             console.error("Import failed:", error);
             alert("Herstel mislukt: " + error.message);
@@ -226,13 +152,9 @@ export const AppProvider = ({ children }) => {
     const clearDatabase = async () => {
         try {
             pushToUndoStack();
-            const res = await fetch('http://localhost:3000/api/clear', { method: 'DELETE' });
-            const result = await res.json();
-            if (result.success) {
-                fetchData();
-                return true;
-            }
-            throw new Error(result.error);
+            await storage.clearAllData();
+            fetchData();
+            return true;
         } catch (error) {
             console.error("Clear failed:", error);
             alert("Wissen mislukt: " + error.message);
@@ -242,7 +164,7 @@ export const AppProvider = ({ children }) => {
 
     const value = {
         activeData,
-        archive,
+        archive: [], // Archive is niet meer in gebruik
         isLoading,
         canUndo: undoStack.length > 0,
         canRedo: redoStack.length > 0,

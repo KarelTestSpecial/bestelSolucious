@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Calendar, Download } from 'lucide-react';
 import { groupDataByWeek } from '../utils/historyUtils';
 import HistoryWeeklyCard from './HistoryWeeklyCard';
 
+const ITEMS_PER_PAGE = 10; // Aantal weken per pagina
+
 const HistoryView = () => {
-    const [data, setData] = useState({ orders: [], deliveries: [], verbruik: [] });
-    const [pagination, setPagination] = useState({});
+    const { activeData } = useAppContext();
     const [currentPage, setCurrentPage] = useState(1);
 
     const today = new Date();
@@ -19,58 +20,47 @@ const HistoryView = () => {
         localStorage.getItem('historyEndDate') || today.toISOString().split('T')[0]
     );
 
-    // Save date changes to localStorage
     useEffect(() => {
         localStorage.setItem('historyStartDate', startDate);
         localStorage.setItem('historyEndDate', endDate);
     }, [startDate, endDate]);
 
-    useEffect(() => {
-        const fetchAllData = async () => {
-            const params = new URLSearchParams({
-                page: currentPage,
-                startDate,
-                endDate,
-                limit: 50
-            });
+    // Filter en pagineer de data lokaal
+    const paginatedData = useMemo(() => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Zorg ervoor dat de einddatum inclusief is
 
-            try {
-                const [ordersRes, deliveriesRes, verbruikRes] = await Promise.all([
-                    fetch(`http://localhost:3000/api/history/orders?${params.toString()}`),
-                    fetch(`http://localhost:3000/api/history/deliveries?${params.toString()}`),
-                    fetch(`http://localhost:3000/api/history/verbruik?${params.toString()}`)
-                ]);
-
-                const ordersResult = await ordersRes.json();
-                const deliveriesResult = await deliveriesRes.json();
-                const verbruikResult = await verbruikRes.json();
-
-                setData({
-                    orders: ordersResult.items || [],
-                    deliveries: deliveriesResult.items || [],
-                    verbruik: verbruikResult.items || []
-                });
-                
-                // Use pagination from the first successful response
-                setPagination(ordersResult.pagination || {});
-            } catch (error) {
-                console.error("Failed to fetch history:", error);
-                setData({ orders: [], deliveries: [], verbruik: [] });
-                setPagination({});
-            }
+        const filterByDate = (item) => {
+            const itemDate = new Date(item.createdAt);
+            return itemDate >= start && itemDate <= end;
         };
 
-        if (startDate && endDate) {
-            fetchAllData();
-        }
-    }, [currentPage, startDate, endDate]);
+        const filtered = {
+            orders: activeData.orders.filter(filterByDate),
+            deliveries: activeData.deliveries.filter(filterByDate),
+            verbruik: activeData.consumption.filter(filterByDate),
+        };
+
+        const groupedByWeek = groupDataByWeek(filtered);
+        const sortedWeeks = Object.entries(groupedByWeek).sort(([a], [b]) => b.localeCompare(a));
+
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+
+        const paginatedWeeks = sortedWeeks.slice(startIndex, endIndex);
+
+        return {
+            weeks: paginatedWeeks,
+            totalPages: Math.ceil(sortedWeeks.length / ITEMS_PER_PAGE),
+        };
+    }, [activeData, currentPage, startDate, endDate]);
 
     const handleDownload = () => {
-        // Combine all data types for download
         const allItems = [
-            ...data.orders.map(item => ({ ...item, type: 'Bestelling' })),
-            ...data.deliveries.map(item => ({ ...item, type: 'Levering' })),
-            ...data.verbruik.map(item => ({ ...item, type: 'Verbruik' }))
+            ...activeData.orders.map(item => ({ ...item, type: 'Bestelling' })),
+            ...activeData.deliveries.map(item => ({ ...item, type: 'Levering' })),
+            ...activeData.consumption.map(item => ({ ...item, type: 'Verbruik' }))
         ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         const headers = ["Type", "Datum", "Week", "Product", "Details", "Totaal"];
@@ -128,8 +118,8 @@ const HistoryView = () => {
             </header>
             <div className="history-content">
                 {
-                    (data.orders.length > 0 || data.deliveries.length > 0 || data.verbruik.length > 0) ? (
-                        Object.entries(groupDataByWeek(data)).map(([weekId, weekData]) => (
+                    paginatedData.weeks.length > 0 ? (
+                        paginatedData.weeks.map(([weekId, weekData]) => (
                             <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} />
                         ))
                     ) : (
@@ -140,9 +130,9 @@ const HistoryView = () => {
                 }
             </div>
             <footer style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
-                <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage <= 1}>Vorige</button>
-                <span>Pagina {pagination.page || 1} van {pagination.totalPages || 1}</span>
-                <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= (pagination.totalPages || 1)}>Volgende</button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>Vorige</button>
+                <span>Pagina {currentPage} van {paginatedData.totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(paginatedData.totalPages, p + 1))} disabled={currentPage >= paginatedData.totalPages}>Volgende</button>
             </footer>
         </div>
     );
