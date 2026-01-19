@@ -9,27 +9,53 @@ export const useProductList = () => {
             return [];
         }
 
-        const allProducts = activeData.products.map(product => {
-            // 1. Get related data for the current product
+        // Step 1: Create a map of all product variants, grouped by a canonical lowercase name.
+        const productsByName = {};
+        activeData.products.forEach(product => {
+            // Determine the most current display name for a product, as it might have been edited.
             const productDeliveries = activeData.deliveries.filter(d => d.productId === product.id);
             const productOrders = activeData.orders.filter(o => o.productId === product.id);
+            let displayName = product.name;
+            const lastDeliveryWithCustomName = [...productDeliveries].reverse().find(d => d.name);
+            if (lastDeliveryWithCustomName) {
+                displayName = lastDeliveryWithCustomName.name;
+            } else {
+                 const lastOrderWithCustomName = [...productOrders].reverse().find(o => o.name);
+                 if (lastOrderWithCustomName) {
+                     displayName = lastOrderWithCustomName.name;
+                 }
+            }
+            const lowerCaseName = displayName.toLowerCase();
 
-            const productConsumptions = activeData.consumption.filter(c => {
+            if (!productsByName[lowerCaseName]) {
+                productsByName[lowerCaseName] = [];
+            }
+            productsByName[lowerCaseName].push(product.id);
+        });
+
+        // Step 2: Iterate over each group of products, aggregate their data, and calculate stats.
+        const aggregatedProducts = Object.keys(productsByName).map(name => {
+            const productIds = productsByName[name];
+
+            // Aggregate all related data for the products in this group
+            const allDeliveries = activeData.deliveries.filter(d => productIds.includes(d.productId));
+            const allOrders = activeData.orders.filter(o => productIds.includes(o.productId));
+            const allConsumptions = activeData.consumption.filter(c => {
                 if (c.sourceType !== 'delivery' && c.sourceType !== 'adhoc') return false;
                 const sourceDelivery = activeData.deliveries.find(d => d.id === c.sourceId);
-                return sourceDelivery && sourceDelivery.productId === product.id;
+                return sourceDelivery && productIds.includes(sourceDelivery.productId);
             });
 
-            // 2. Calculate current stock
-            const totalDelivered = productDeliveries.reduce((sum, d) => sum + d.qty, 0);
-            const totalConsumed = productConsumptions
+            // Calculate aggregated stock
+            const totalDelivered = allDeliveries.reduce((sum, d) => sum + d.qty, 0);
+            const totalConsumed = allConsumptions
                 .filter(c => c.completed)
                 .reduce((sum, c) => sum + c.qty, 0);
             const currentStock = totalDelivered - totalConsumed;
 
-            // 3. Find the most recent price from the latest delivery or order
-            const lastDelivery = [...productDeliveries].sort((a, b) => getAbsoluteWeek(b.weekId) - getAbsoluteWeek(a.weekId))[0];
-            const lastOrder = [...productOrders].sort((a, b) => getAbsoluteWeek(b.weekId) - getAbsoluteWeek(a.weekId))[0];
+            // Find the most recent price from all aggregated deliveries and orders
+            const lastDelivery = [...allDeliveries].sort((a, b) => getAbsoluteWeek(b.weekId) - getAbsoluteWeek(a.weekId))[0];
+            const lastOrder = [...allOrders].sort((a, b) => getAbsoluteWeek(b.weekId) - getAbsoluteWeek(a.weekId))[0];
 
             let recentPrice = 0;
             if (lastDelivery && lastOrder) {
@@ -41,12 +67,12 @@ export const useProductList = () => {
             }
             recentPrice = recentPrice || 0;
 
-            // 4. Calculate average weekly consumption and weeks of supply
+            // Calculate aggregated weeks of supply
             let weeksOfSupply = Infinity;
             if (activeData.settings && activeData.settings.currentWeek) {
                 const currentAbsWeek = getAbsoluteWeek(activeData.settings.currentWeek);
-                const historySpan = 8; // Look back 8 weeks for consumption average
-                const recentConsumptions = productConsumptions
+                const historySpan = 8;
+                const recentConsumptions = allConsumptions
                     .filter(c => c.completed && getAbsoluteWeek(c.weekId) > currentAbsWeek - historySpan && getAbsoluteWeek(c.weekId) <= currentAbsWeek);
 
                 const totalRecentConsumption = recentConsumptions.reduce((sum, c) => sum + c.qty, 0);
@@ -55,28 +81,16 @@ export const useProductList = () => {
                 weeksOfSupply = avgWeeklyConsumption > 0 ? Math.round((currentStock / avgWeeklyConsumption) * 10) / 10 : Infinity;
             }
 
-            // 6. Get the most recent name for the product
-            let displayName = product.name;
-            const lastDeliveryWithCustomName = [...productDeliveries].reverse().find(d => d.name);
-            if (lastDeliveryWithCustomName) {
-                displayName = lastDeliveryWithCustomName.name;
-            } else {
-                 const lastOrderWithCustomName = [...productOrders].reverse().find(o => o.name);
-                 if (lastOrderWithCustomName) {
-                     displayName = lastOrderWithCustomName.name;
-                 }
-            }
-
             return {
-                id: product.id,
-                name: displayName.toLowerCase(),
+                id: name, // Use the unique name as the key
+                name: name,
                 stock: currentStock,
                 price: recentPrice,
                 weeksOfSupply: weeksOfSupply
             };
         });
 
-        return allProducts.sort((a, b) => a.name.localeCompare(b.name));
+        return aggregatedProducts.sort((a, b) => a.name.localeCompare(b.name));
     };
 
     return { getProductList };
