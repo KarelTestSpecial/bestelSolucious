@@ -41,17 +41,19 @@ export const useProductList = () => {
             }
             recentPrice = recentPrice || 0;
 
-            // 4. Calculate average weekly consumption over the last 8 weeks
-            const currentAbsWeek = getAbsoluteWeek(activeData.settings.currentWeek);
-            const historySpan = 8; // Look back 8 weeks for consumption average
-            const recentConsumptions = productConsumptions
-                .filter(c => c.completed && getAbsoluteWeek(c.weekId) > currentAbsWeek - historySpan && getAbsoluteWeek(c.weekId) <= currentAbsWeek);
+            // 4. Calculate average weekly consumption and weeks of supply
+            let weeksOfSupply = Infinity;
+            if (activeData.settings && activeData.settings.currentWeek) {
+                const currentAbsWeek = getAbsoluteWeek(activeData.settings.currentWeek);
+                const historySpan = 8; // Look back 8 weeks for consumption average
+                const recentConsumptions = productConsumptions
+                    .filter(c => c.completed && getAbsoluteWeek(c.weekId) > currentAbsWeek - historySpan && getAbsoluteWeek(c.weekId) <= currentAbsWeek);
 
-            const totalRecentConsumption = recentConsumptions.reduce((sum, c) => sum + c.qty, 0);
-            const avgWeeklyConsumption = totalRecentConsumption / historySpan;
+                const totalRecentConsumption = recentConsumptions.reduce((sum, c) => sum + c.qty, 0);
+                const avgWeeklyConsumption = totalRecentConsumption / historySpan;
 
-            // 5. Calculate estimated weeks of supply
-            const weeksOfSupply = avgWeeklyConsumption > 0 ? Math.round((currentStock / avgWeeklyConsumption) * 10) / 10 : Infinity;
+                weeksOfSupply = avgWeeklyConsumption > 0 ? Math.round((currentStock / avgWeeklyConsumption) * 10) / 10 : Infinity;
+            }
 
             // 6. Get the most recent name for the product
             let displayName = product.name;
