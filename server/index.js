@@ -48,14 +48,13 @@ app.get('/api/full-data', async (req, res) => {
 });
 
 // --- Week Utility Functions (copied from src/utils/weekUtils.js for server-side use) ---
-const getWeekIdFromDate = (date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    // Monday is day 1, Sunday is day 0 in JS
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
+const getWeekIdFromDate = (dateInput) => {
+    const date = new Date(dateInput);
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
 };
 
 // --- HISTORY Endpoints ---

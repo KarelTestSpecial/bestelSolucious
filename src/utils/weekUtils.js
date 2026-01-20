@@ -59,19 +59,12 @@ export const getWeekIdFromDate = (dateInput) => {
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     // Calculate full weeks to nearest Thursday
     const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    // Return array of year and week number
-    return `${d.getUTCFullYear()}-W${weekNo}`;
+    // Return year and week number with padding
+    return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
 };
 
 export const getWeekIdFromAbs = (absWeek) => {
     const refDate = new Date(2020, 0, 6, 12, 0, 0, 0);
     const targetDate = new Date(refDate.getTime() + (absWeek * 7 * 24 * 60 * 60 * 1000));
-    const year = targetDate.getFullYear();
-    
-    // Calculate ISO week number
-    const startOfYear = new Date(year, 0, 1);
-    const days = Math.floor((targetDate - startOfYear) / (24 * 60 * 60 * 1000));
-    const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-    
-    return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+    return getWeekIdFromDate(targetDate);
 };

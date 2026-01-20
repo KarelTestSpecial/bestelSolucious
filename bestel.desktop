@@ -4,8 +4,8 @@ Version=1.0
 Name=Bestel Tracker
 Comment=Start de Bestel Tracker
 # We roepen het script direct aan, de Terminal=true zorgt voor het venster
-Exec=/bin/bash -l -c "/home/kareltestspecial/a/bestelSolucious/bestel/bestel.sh"
-Icon=applications-development
+Exec=/bin/bash -l -c "/home/kareltestspecial/kdc/bestelSolucious/bestel/bestel.sh"
+Icon=/home/kareltestspecial/kdc/bestelSolucious/bestel/bestel.svg
 # BELANGRIJK: Dit moet false zijn om het ronddraaien te stoppen
 StartupNotify=false
 # BELANGRIJK: Dit zorgt dat ChromeOS zelf een terminal venster opent
