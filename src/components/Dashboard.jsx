@@ -318,7 +318,7 @@ const WeeklyCard = ({ data }) => {
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
-                            <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
+                            <Truck size={16} /> Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
                         {isCurrent && <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>}
                     </div>
@@ -435,7 +435,7 @@ const WeeklyCard = ({ data }) => {
                 {/* 3a. Verbruik uit Levering */}
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Effectief Verbruik uit Levering (€{deliveryConsumptionTotal.toFixed(2)})
+                        <TrendingUp size={16} /> Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
@@ -491,7 +491,7 @@ const WeeklyCard = ({ data }) => {
                 {/* 3b. Verbruik uit Stock */}
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Effectief Verbruik uit Stock (€{stockConsumptionTotal.toFixed(2)})
+                        <TrendingUp size={16} /> Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
