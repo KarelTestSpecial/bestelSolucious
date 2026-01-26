@@ -168,7 +168,7 @@ th {
 
 .formal-table th,
 .formal-table td {
-  padding: 0.17rem 0.3rem;
+  padding: 0rem 0rem;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

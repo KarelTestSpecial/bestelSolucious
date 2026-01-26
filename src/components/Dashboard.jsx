@@ -208,22 +208,22 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '15%' }}>Aantal</th>
-                                <th style={{ width: '20%' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%' }}>Verwachte Duur</th>
-                                <th style={{ width: '15%' }}>Subtotaal</th>
-                                <th style={{ width: '10%' }}></th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {stats.orders.length > 0 ? stats.orders.map(o => (
                                 <tr key={o.id}>
                                     <td><EditableCell value={o.name} onSave={val => updateItem('order', o.id, { name: val })} /></td>
-                                    <td><EditableCell value={o.qty} type="number" precision={0} onSave={val => updateItem('order', o.id, { qty: val })} /></td>
-                                    <td>€<EditableCell value={o.price} type="number" onSave={val => updateItem('order', o.id, { price: val })} /></td>
-                                    <td><EditableCell value={o.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('order', o.id, { estDuration: val })} /></td>
-                                    <td><strong>€{(o.qty * o.price).toFixed(2)}</strong></td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}><EditableCell value={o.qty} type="number" precision={0} onSave={val => updateItem('order', o.id, { qty: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}>€<EditableCell value={o.price} type="number" onSave={val => updateItem('order', o.id, { price: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}><EditableCell value={o.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('order', o.id, { estDuration: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}><strong>€{(o.qty * o.price).toFixed(2)}</strong></td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <button 
                                             onClick={() => deleteItem('order', o.id)}
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
@@ -246,7 +246,7 @@ const WeeklyCard = ({ data }) => {
                                             autoFocus
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -255,7 +255,7 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewOrder({ ...newOrder, qty: parseInt(e.target.value) || 1 })}
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -266,7 +266,7 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewOrder({ ...newOrder, price: e.target.value })}
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -275,8 +275,8 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewOrder({ ...newOrder, estDuration: parseInt(e.target.value) || 1 })}
                                         />
                                     </td>
-                                    <td><strong>€{(newOrder.qty * (parseFloat(newOrder.price) || 0)).toFixed(2)}</strong></td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}><strong>€{(newOrder.qty * (parseFloat(newOrder.price) || 0)).toFixed(2)}</strong></td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <button 
                                                 onClick={() => {
@@ -326,22 +326,22 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '15%' }}>Aantal</th>
-                                <th style={{ width: '20%' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%' }}>Verwachte Duur</th>
-                                <th style={{ width: '15%' }}>Subtotaal</th>
-                                <th style={{ width: '10%' }}></th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {stats.deliveries.length > 0 ? stats.deliveries.map(d => (
                                 <tr key={d.id}>
                                     <td><EditableCell value={d.name || 'Geleverd Item'} onSave={val => updateItem('delivery', d.id, { name: val })} /></td>
-                                    <td><EditableCell value={d.qty} type="number" precision={0} onSave={val => updateItem('delivery', d.id, { qty: val })} /></td>
-                                    <td>€<EditableCell value={d.price} type="number" onSave={val => updateItem('delivery', d.id, { price: val })} /></td>
-                                    <td><EditableCell value={d.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('delivery', d.id, { estDuration: val })} /></td>
-                                    <td><strong>€{(d.qty * d.price).toFixed(2)}</strong></td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}><EditableCell value={d.qty} type="number" precision={0} onSave={val => updateItem('delivery', d.id, { qty: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}>€<EditableCell value={d.price} type="number" onSave={val => updateItem('delivery', d.id, { price: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}><EditableCell value={d.estDuration} type="number" precision={0} suffix=" w" onSave={val => updateItem('delivery', d.id, { estDuration: val })} /></td>
+                                    <td style={{ textAlign: 'center' }}><strong>€{(d.qty * d.price).toFixed(2)}</strong></td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <button 
                                             onClick={() => deleteItem('delivery', d.id)}
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
@@ -364,7 +364,7 @@ const WeeklyCard = ({ data }) => {
                                             autoFocus
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -373,7 +373,7 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewDelivery({ ...newDelivery, qty: parseInt(e.target.value) || 1 })}
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -384,7 +384,7 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewDelivery({ ...newDelivery, price: e.target.value })}
                                         />
                                     </td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <input
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
@@ -393,8 +393,8 @@ const WeeklyCard = ({ data }) => {
                                             onChange={e => setNewDelivery({ ...newDelivery, estDuration: parseInt(e.target.value) || 1 })}
                                         />
                                     </td>
-                                    <td><strong>€{(newDelivery.qty * (parseFloat(newDelivery.price) || 0)).toFixed(2)}</strong></td>
-                                    <td>
+                                    <td style={{ textAlign: 'center' }}><strong>€{(newDelivery.qty * (parseFloat(newDelivery.price) || 0)).toFixed(2)}</strong></td>
+                                    <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <button 
                                                 onClick={() => {
@@ -441,10 +441,10 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%' }}>Subtotaal (aankoop)</th>
-                                <th style={{ width: '20%' }}>Voortgang</th>
-                                <th style={{ width: '15%' }}>Kost p/w</th>
-                                <th style={{ width: '15%' }}>Start Week</th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Start Week</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -453,8 +453,8 @@ const WeeklyCard = ({ data }) => {
                                 return (
                                     <tr key={c.id}>
                                         <td>{c.displayName}</td>
-                                        <td>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
-                                        <td>
+                                        <td style={{ textAlign: 'center' }}>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
+                                        <td style={{ textAlign: 'center' }}>
                                             <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                 <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
                                                 <EditableCell
@@ -472,8 +472,8 @@ const WeeklyCard = ({ data }) => {
                                                 />
                                             </span>
                                         </td>
-                                        <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
-                                        <td>
+                                        <td style={{ textAlign: 'center' }}><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
+                                        <td style={{ textAlign: 'center' }}>
                                             <EditableCell
                                                 value={c.startDate}
                                                 type="date"
@@ -497,11 +497,11 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%' }}>Subtotaal (aankoop)</th>
-                                <th style={{ width: '20%' }}>Voortgang</th>
-                                <th style={{ width: '15%' }}>Kost p/w</th>
-                                <th style={{ width: '15%' }}>Start Week</th>
-                                <th style={{ width: '10%' }}></th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Start Week</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -510,8 +510,8 @@ const WeeklyCard = ({ data }) => {
                                 return (
                                     <tr key={c.id}>
                                         <td>{c.displayName}</td>
-                                        <td>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
-                                        <td>
+                                        <td style={{ textAlign: 'center' }}>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
+                                        <td style={{ textAlign: 'center' }}>
                                             <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                 <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
                                                 <EditableCell
@@ -529,15 +529,15 @@ const WeeklyCard = ({ data }) => {
                                                 />
                                             </span>
                                         </td>
-                                        <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
-                                        <td>
+                                        <td style={{ textAlign: 'center' }}><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
+                                        <td style={{ textAlign: 'center' }}>
                                             <EditableCell
                                                 value={c.startDate}
                                                 type="date"
                                                 onSave={val => updateItem('consumption', c.id, { startDate: val })}
                                             />
                                         </td>
-                                        <td>
+                                        <td style={{ textAlign: 'center' }}>
                                             {isCurrent && (
                                                 <>
                                                     {!isCompleted ? (
