@@ -162,11 +162,17 @@ const WeeklyCard = ({ data }) => {
     const [newOrder, setNewOrder] = useState(null);
     const [newDelivery, setNewDelivery] = useState(null);
 
+    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.weeksSincePurchase <= 1);
+    const consumptionFromStock = stats.consumptionInWeek.filter(c => c.weeksSincePurchase > 1);
+
+    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + c.weeklyCost, 0);
+    const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
+
     return (
         <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0rem' }}>
-                <h3 style={{ margin: 0 }}>
-                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1.1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
                     {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
                 </h3>
                 <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
@@ -189,9 +195,9 @@ const WeeklyCard = ({ data }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'nowrap' }}>
                 {/* 1. Bestellingen */}
-                <section style={{ flex: 1, minWidth: '300px' }}>
+                <section style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
                             <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
@@ -201,12 +207,12 @@ const WeeklyCard = ({ data }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: 'auto' }}>Naam</th>
-                                <th style={{ width: '80px' }}>Aantal</th>
-                                <th style={{ width: '120px' }}>Prijs (p/u)</th>
-                                <th style={{ width: '130px' }}>Verwachte Duur</th>
-                                <th style={{ width: '110px' }}>Subtotaal</th>
-                                <th style={{ width: '140px' }}></th>
+                                <th style={{ width: '25%' }}>Naam</th>
+                                <th style={{ width: '15%' }}>Aantal</th>
+                                <th style={{ width: '20%' }}>Prijs (p/u)</th>
+                                <th style={{ width: '15%' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%' }}>Subtotaal</th>
+                                <th style={{ width: '10%' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -309,7 +315,7 @@ const WeeklyCard = ({ data }) => {
                 </section>
                 
                 {/* 2. Effectieve Leveringen */}
-                <section style={{ flex: 1, minWidth: '300px' }}>
+                <section style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Effectieve Leveringen (€{stats.deliveryTotal.toFixed(2)})
@@ -319,12 +325,12 @@ const WeeklyCard = ({ data }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: 'auto' }}>Naam</th>
-                                <th style={{ width: '80px' }}>Aantal</th>
-                                <th style={{ width: '120px' }}>Prijs (p/u)</th>
-                                <th style={{ width: '130px' }}>Verwachte Duur</th>
-                                <th style={{ width: '110px' }}>Subtotaal</th>
-                                <th style={{ width: '140px' }}></th>
+                                <th style={{ width: '25%' }}>Naam</th>
+                                <th style={{ width: '15%' }}>Aantal</th>
+                                <th style={{ width: '20%' }}>Prijs (p/u)</th>
+                                <th style={{ width: '15%' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%' }}>Subtotaal</th>
+                                <th style={{ width: '10%' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -426,99 +432,139 @@ const WeeklyCard = ({ data }) => {
                     </table>
                 </section>
 
-                {/* 3. In Effectief Verbruik */}
-                <section style={{ flex: 1, minWidth: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0 }}>
-                            <TrendingUp size={16} /> Effectief Verbruik
-                        </h4>
-                    </div>
+                {/* 3a. Verbruik uit Levering */}
+                <section style={{ flex: 1, minWidth: '200px' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
+                        <TrendingUp size={16} /> Effectief Verbruik uit Levering (€{deliveryConsumptionTotal.toFixed(2)})
+                    </h4>
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: 'auto' }}>Naam</th>
-                                <th style={{ width: '120px' }}>Subtotaal (aankoop)</th>
-                                <th style={{ width: '130px' }}>Voortgang</th>
-                                <th style={{ width: '110px' }}>Kost p/w</th>
-                                <th style={{ width: '140px' }}>Start Week</th>
-                                <th style={{ width: '80px' }}></th>
+                                <th style={{ width: '25%' }}>Naam</th>
+                                <th style={{ width: '25%' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '20%' }}>Voortgang</th>
+                                <th style={{ width: '15%' }}>Kost p/w</th>
+                                <th style={{ width: '15%' }}>Start Week</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {stats.consumptionInWeek.length > 0 ? [...stats.consumptionInWeek].sort((a, b) => {
-                                // Sort by weeksSincePurchase: items with weeksSincePurchase === 1 first, then others
-                                if (a.weeksSincePurchase === 1 && b.weeksSincePurchase !== 1) return -1;
-                                if (a.weeksSincePurchase !== 1 && b.weeksSincePurchase === 1) return 1;
-                                return 0;
-                            }).map(c => {
+                            {consumptionFromDelivery.map(c => {
                                 const isCompleted = c.completed && c.effDuration > 0;
-                                const isCarriedOver = c.weeksSincePurchase > 1;
                                 return (
-                                <tr
-                                    key={c.id}
-                                    style={{
-                                        backgroundColor: isCarriedOver ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                                        borderTop: isCarriedOver ? '1px solid rgba(255, 255, 255, 0)' : 'none'
-                                    }}
-                                >
-                                    <td>{c.displayName}</td>
-                                    <td>
-                                        €<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} />
-                                    </td>
-                                    <td>
-                                        <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                            <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
+                                    <tr key={c.id}>
+                                        <td>{c.displayName}</td>
+                                        <td>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
+                                        <td>
+                                            <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
+                                                <EditableCell
+                                                    value={c.effDuration ?? (c.estDuration || '---')}
+                                                    type={c.effDuration ? 'number' : 'text'}
+                                                    precision={0}
+                                                    suffix=" w"
+                                                    onSave={val => {
+                                                        const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
+                                                        updateItem('consumption', c.id, {
+                                                            effDuration: isEmpty ? null : parseFloat(val),
+                                                            completed: !isEmpty
+                                                        });
+                                                    }}
+                                                />
+                                            </span>
+                                        </td>
+                                        <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
+                                        <td>
                                             <EditableCell
-                                                value={c.effDuration ?? (c.estDuration || '---')}
-                                                type={c.effDuration ? 'number' : 'text'}
-                                                precision={0}
-                                                suffix=" w"
-                                                onSave={val => {
-                                                    const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
-                                                    updateItem('consumption', c.id, {
-                                                        effDuration: isEmpty ? null : parseFloat(val),
-                                                        completed: !isEmpty
-                                                    });
-                                                }}
+                                                value={c.startDate}
+                                                type="date"
+                                                onSave={val => updateItem('consumption', c.id, { startDate: val })}
                                             />
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <strong>€{c.weeklyCost.toFixed(2)}</strong>
-                                    </td>
-                                    <td>
-                                        <EditableCell
-                                            value={c.startDate}
-                                            type="date"
-                                            onSave={val => updateItem('consumption', c.id, { startDate: val })}
-                                        />
-                                    </td>
-                                    <td>
-                                        {isCurrent && (
-                                            <>
-                                                {!isCompleted ? (
-                                                    <button
-                                                        onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
-                                                        className="badge badge-danger"
-                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
-                                                    >
-                                                        OP
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
-                                                        className="badge badge-warning"
-                                                        title="Heropen item (niet op)"
-                                                        style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                                    >
-                                                        <RotateCcw size={14} />
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            )}) : <tr><td colSpan="6" className="empty-text">Geen verbruik deze week</td></tr>}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {consumptionFromDelivery.length === 0 && <tr><td colSpan="5" className="empty-text">Geen verbruik uit levering</td></tr>}
+                        </tbody>
+                    </table>
+                </section>
+
+                {/* 3b. Verbruik uit Stock */}
+                <section style={{ flex: 1, minWidth: '200px' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
+                        <TrendingUp size={16} /> Effectief Verbruik uit Stock (€{stockConsumptionTotal.toFixed(2)})
+                    </h4>
+                    <table className="formal-table">
+                        <thead>
+                            <tr>
+                                <th style={{ width: '25%' }}>Naam</th>
+                                <th style={{ width: '25%' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '20%' }}>Voortgang</th>
+                                <th style={{ width: '15%' }}>Kost p/w</th>
+                                <th style={{ width: '15%' }}>Start Week</th>
+                                <th style={{ width: '10%' }}></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {consumptionFromStock.map(c => {
+                                const isCompleted = c.completed && c.effDuration > 0;
+                                return (
+                                    <tr key={c.id}>
+                                        <td>{c.displayName}</td>
+                                        <td>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
+                                        <td>
+                                            <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
+                                                <EditableCell
+                                                    value={c.effDuration ?? (c.estDuration || '---')}
+                                                    type={c.effDuration ? 'number' : 'text'}
+                                                    precision={0}
+                                                    suffix=" w"
+                                                    onSave={val => {
+                                                        const isEmpty = val === '---' || val === '-' || val === '' || val === 0 || val === '0';
+                                                        updateItem('consumption', c.id, {
+                                                            effDuration: isEmpty ? null : parseFloat(val),
+                                                            completed: !isEmpty
+                                                        });
+                                                    }}
+                                                />
+                                            </span>
+                                        </td>
+                                        <td><strong>€{c.weeklyCost.toFixed(2)}</strong></td>
+                                        <td>
+                                            <EditableCell
+                                                value={c.startDate}
+                                                type="date"
+                                                onSave={val => updateItem('consumption', c.id, { startDate: val })}
+                                            />
+                                        </td>
+                                        <td>
+                                            {isCurrent && (
+                                                <>
+                                                    {!isCompleted ? (
+                                                        <button
+                                                            onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
+                                                            className="badge badge-danger"
+                                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                                        >
+                                                            OP
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
+                                                            className="badge badge-warning"
+                                                            title="Heropen item (niet op)"
+                                                            style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                        >
+                                                            <RotateCcw size={14} />
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {consumptionFromStock.length === 0 && <tr><td colSpan="6" className="empty-text">Geen verbruik uit stock</td></tr>}
                         </tbody>
                     </table>
                 </section>
