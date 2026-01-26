@@ -242,50 +242,66 @@ app.post('/api/consumption', async (req, res) => {
 // --- PATCH Endpoints (Updates) ---
 
 app.patch('/api/consumption/:id', async (req, res) => {
-  const { id } = req.params;
-  const updated = await prisma.consumption.update({
-    where: { id },
-    data: req.body
-  });
-  res.json(updated);
+  try {
+    const { id } = req.params;
+    const updated = await prisma.consumption.update({
+      where: { id },
+      data: req.body
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating consumption:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.patch('/api/deliveries/:id', async (req, res) => {
-  const { id } = req.params;
-  const updates = req.body;
+  try {
+    const { id } = req.params;
+    const updates = req.body;
 
-  const updatedDelivery = await prisma.delivery.update({
-    where: { id },
-    data: updates
-  });
-
-  if (updates.price !== undefined || updates.qty !== undefined || updates.name !== undefined || updates.estDuration !== undefined) {
-    const consumption = await prisma.consumption.findFirst({
-      where: { sourceId: id }
+    const updatedDelivery = await prisma.delivery.update({
+      where: { id },
+      data: updates
     });
 
-    if (consumption) {
-      await prisma.consumption.update({
-        where: { id: consumption.id },
-        data: {
-          name: updates.name !== undefined ? updates.name : undefined,
-          qty: updates.qty !== undefined ? parseFloat(updates.qty) : undefined,
-          estDuration: updates.estDuration !== undefined ? parseFloat(updates.estDuration) : undefined,
-          cost: (updatedDelivery.price * updatedDelivery.qty)
-        }
+    if (updates.price !== undefined || updates.qty !== undefined || updates.name !== undefined || updates.estDuration !== undefined) {
+      const consumption = await prisma.consumption.findFirst({
+        where: { sourceId: id }
       });
+
+      if (consumption) {
+        await prisma.consumption.update({
+          where: { id: consumption.id },
+          data: {
+            name: updates.name !== undefined ? updates.name : consumption.name,
+            qty: updates.qty !== undefined ? updates.qty : consumption.qty,
+            cost: (updates.price !== undefined ? updates.price : (updatedDelivery.price)) * (updates.qty !== undefined ? updates.qty : updatedDelivery.qty),
+            estDuration: updates.estDuration !== undefined ? updates.estDuration : consumption.estDuration
+          }
+        });
+      }
     }
+
+    res.json(updatedDelivery);
+  } catch (error) {
+    console.error("Error updating delivery:", error);
+    res.status(500).json({ error: error.message });
   }
-  res.json(updatedDelivery);
 });
 
 app.patch('/api/orders/:id', async (req, res) => {
-  const { id } = req.params;
-  const updated = await prisma.order.update({
-    where: { id },
-    data: req.body
-  });
-  res.json(updated);
+  try {
+    const { id } = req.params;
+    const updated = await prisma.order.update({
+      where: { id },
+      data: req.body
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // --- DELETE Endpoints ---

@@ -124,6 +124,41 @@ export const AppProvider = ({ children }) => {
     };
 
     const updateItem = async (type, id, updates) => {
+        // Speciale afhandeling voor virtuele/impliciete verbruiksitems
+        if (type === 'consumption' && id.toString().startsWith('implicit-')) {
+            let source = null;
+            let sourceType = 'delivery';
+            
+            if (id.startsWith('implicit-order-')) {
+                const orderId = id.replace('implicit-order-', '');
+                source = activeData.orders.find(o => o.id === orderId);
+            } else {
+                const deliveryId = id.replace('implicit-', '');
+                source = activeData.deliveries.find(d => d.id === deliveryId);
+            }
+
+            if (source) {
+                pushToUndoStack();
+                await fetch('/api/consumption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceId: source.id,
+                        sourceType: sourceType,
+                        name: source.name,
+                        qty: source.qty,
+                        cost: source.price * source.qty,
+                        startDate: source.weekId,
+                        estDuration: source.estDuration,
+                        completed: false,
+                        ...updates
+                    }),
+                });
+                fetchData();
+                return;
+            }
+        }
+
         let endpoint = '';
         if (type === 'consumption') endpoint = `/api/consumption/${id}`;
         if (type === 'delivery') endpoint = `/api/deliveries/${id}`;
@@ -131,12 +166,22 @@ export const AppProvider = ({ children }) => {
 
         if (endpoint) {
             pushToUndoStack();
-            await fetch(endpoint, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            });
-            fetchData();
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Update failed');
+                }
+                fetchData();
+            } catch (error) {
+                console.error(`Error updating ${type}:`, error);
+                // We herladen data om de UI weer in sync te brengen bij falen
+                fetchData();
+            }
         }
     };
 
