@@ -31,7 +31,7 @@ const HistoryView = () => {
                 page: currentPage,
                 startDate,
                 endDate,
-                limit: 50
+                limit: 200
             });
 
             try {
@@ -51,8 +51,20 @@ const HistoryView = () => {
                     verbruik: verbruikResult.items || []
                 });
                 
-                // Use pagination from the first successful response
-                setPagination(ordersResult.pagination || {});
+                // Calculate max pagination
+                const maxPages = Math.max(
+                    ordersResult.pagination?.totalPages || 0,
+                    deliveriesResult.pagination?.totalPages || 0,
+                    verbruikResult.pagination?.totalPages || 0
+                );
+                const totalItems = (ordersResult.pagination?.total || 0) + (deliveriesResult.pagination?.total || 0) + (verbruikResult.pagination?.total || 0);
+
+                setPagination({
+                    page: currentPage,
+                    totalPages: maxPages,
+                    total: totalItems,
+                    limit: 200
+                });
             } catch (error) {
                 console.error("Failed to fetch history:", error);
                 setData({ orders: [], deliveries: [], verbruik: [] });

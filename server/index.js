@@ -96,46 +96,31 @@ app.get('/api/history/verbruik', async (req, res) => {
         const limit = parseInt(req.query.limit || '10', 10);
         const skip = (page - 1) * limit;
 
-        const dateFilter = {};
+        const where = {};
         if (startDate && endDate) {
             const endOfDay = new Date(endDate);
             endOfDay.setHours(23, 59, 59, 999);
-            dateFilter.gte = new Date(startDate);
-            dateFilter.lte = endOfDay;
+            where.createdAt = { gte: new Date(startDate), lte: endOfDay };
         }
 
-        const allDeliveries = await prisma.delivery.findMany({ where: { createdAt: dateFilter } });
-        const allConsumption = await prisma.consumption.findMany({ where: { createdAt: dateFilter } });
+        const [consumptionItems, total] = await prisma.$transaction([
+            prisma.consumption.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.consumption.count({ where }),
+        ]);
 
-        const consumptionBySource = allConsumption.reduce((acc, c) => {
-            acc[c.sourceId] = c;
-            return acc;
-        }, {});
-
-        const effectiveConsumptionItems = allDeliveries.map(d => {
-            const explicitConsumption = consumptionBySource[d.id];
-            const duration = explicitConsumption?.effDuration || d.estDuration || 1;
-            const cost = explicitConsumption?.cost || (d.price * d.qty);
-
-            return {
-                id: explicitConsumption?.id || `implicit-${d.id}`,
-                name: d.name,
-                qty: d.qty,
-                cost: cost,
-                weeklyCost: cost / duration,
-                estDuration: d.estDuration,
-                effDuration: explicitConsumption?.effDuration,
-                createdAt: d.createdAt,
-                weekId: getWeekIdFromDate(new Date(d.createdAt)),
-                sourceId: d.id,
-            };
-        });
-
-        const total = effectiveConsumptionItems.length;
-        const paginatedItems = effectiveConsumptionItems.slice(skip, skip + limit);
+        const items = consumptionItems.map(c => ({
+            ...c,
+            weekId: c.startDate, // In de app is startDate de weekId voor consumptie
+            weeklyCost: c.cost / (c.effDuration || c.estDuration || 1)
+        }));
 
         res.json({
-            items: paginatedItems,
+            items,
             pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
         });
 
