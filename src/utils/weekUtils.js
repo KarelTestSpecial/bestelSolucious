@@ -68,3 +68,16 @@ export const getWeekIdFromAbs = (absWeek) => {
     const targetDate = new Date(refDate.getTime() + (absWeek * 7 * 24 * 60 * 60 * 1000));
     return getWeekIdFromDate(targetDate);
 };
+
+export const getWeekIdsInRange = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const weeks = new Set();
+    let current = new Date(start);
+    while (current <= end) {
+        weeks.add(getWeekIdFromDate(current));
+        current.setDate(current.getDate() + 1);
+    }
+    weeks.add(getWeekIdFromDate(end));
+    return Array.from(weeks).sort().reverse();
+};

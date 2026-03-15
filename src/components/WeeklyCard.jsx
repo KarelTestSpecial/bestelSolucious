@@ -1,87 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, ArrowUpCircle } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday, parseWeekId } from '../utils/weekUtils';
-import { Plus, ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, Undo2, Redo2, ArrowUpCircle } from 'lucide-react';
-import OrderForm from './OrderForm';
-import DeliveryForm from './DeliveryForm';
-import ConsumptionForm from './ConsumptionForm';
 import PropTypes from 'prop-types';
 
-const Dashboard = () => {
-    const { getTimeline } = useWeeklyStats();
-    const { undo, redo, canUndo, canRedo } = useAppContext();
-    const [activeModal, setActiveModal] = useState(null);
-
-    const timeline = getTimeline();
-
-    return (
-        <div className="dashboard">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-               
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0)', paddingRight: '0rem', marginRight: '0rem' }}>
-                        <button 
-                            onClick={undo} 
-                            disabled={!canUndo}
-                            style={{ 
-                                background: '#6e40c9', 
-                                padding: '0.5rem', 
-                                opacity: canUndo ? 1 : 0.3, 
-                                cursor: canUndo ? 'pointer' : 'not-allowed',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Ongedaan maken"
-                        >
-                            <Undo2 size={16} />
-                        </button>
-                        <button 
-                            onClick={redo} 
-                            disabled={!canRedo}
-                            style={{ 
-                                background: '#6e40c9', 
-                                padding: '0.5rem', 
-                                opacity: canRedo ? 1 : 0.3, 
-                                cursor: canRedo ? 'pointer' : 'not-allowed',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Opnieuw uitvoeren"
-                        >
-                            <Redo2 size={16} />
-                        </button>
-                    </div>
-
-                    <button onClick={() => setActiveModal('order')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Plus size={10} /> Nieuwe Bestelling
-                    </button>
-                    <button onClick={() => setActiveModal('delivery')} className="badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Levering Bevestigen
-                    </button>
-                    <button onClick={() => setActiveModal('consumption')} style={{ padding: '5px 17px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>
-                </div>
-            </header>
-
-            {activeModal === 'order' && <OrderForm onClose={() => setActiveModal(null)} />}
-            {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
-            {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
-
-            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                {timeline.map((item) => (
-                    <WeeklyCard key={item.weekId} data={item} onAddAdhoc={() => setActiveModal('consumption')} />
-                ))}
-            </div>
-
-        </div>
-    );
-};
-
-const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2 }) => {
+export const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2 }) => {
     const [isEditing, setIsEditing] = useState(false);
-    // For date type, we want to start with a real date string (YYYY-MM-DD)
     const [tempValue, setTempValue] = useState(value);
     const inputRef = useRef(null);
 
@@ -135,7 +59,7 @@ const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2
         );
     }
 
-    const displayValue = type === 'date' && value && value.includes('-W') 
+    const displayValue = type === 'date' && value && value.toString().includes('-W') 
         ? parseWeekId(value).week 
         : (type === 'number' && typeof value === 'number' ? value.toFixed(precision) : value);
 
@@ -147,14 +71,14 @@ const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2
 };
 
 EditableCell.propTypes = {
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     onSave: PropTypes.func.isRequired,
     type: PropTypes.string,
     suffix: PropTypes.string,
     precision: PropTypes.number,
 };
 
-const WeeklyCard = ({ data }) => {
+export const WeeklyCard = ({ data }) => {
     const { updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
     const { weekId, offset, stats } = data;
     const isCurrent = offset === 0;
@@ -162,14 +86,14 @@ const WeeklyCard = ({ data }) => {
     const [newOrder, setNewOrder] = useState(null);
     const [newDelivery, setNewDelivery] = useState(null);
 
-    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.weeksSincePurchase <= 1 && c.isOrdered);
-    const consumptionFromStock = stats.consumptionInWeek.filter(c => c.weeksSincePurchase > 1 || !c.isOrdered);
+    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.isOrdered);
+    const consumptionFromStock = stats.consumptionInWeek.filter(c => !c.isOrdered);
 
     const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + c.weeklyCost, 0);
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
 
     return (
-        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none' }}>
+        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
                     Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
@@ -195,9 +119,9 @@ const WeeklyCard = ({ data }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'nowrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {/* 1. Bestellingen */}
-                <section style={{ flex: 1, minWidth: '200px' }}>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
                             <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
@@ -210,7 +134,7 @@ const WeeklyCard = ({ data }) => {
                                 <th style={{ width: '25%' }}>Naam</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Duur</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
@@ -315,12 +239,12 @@ const WeeklyCard = ({ data }) => {
                 </section>
                 
                 {/* 2. Effectieve Leveringen */}
-                <section style={{ flex: 1, minWidth: '200px' }}>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
                             <Truck size={16} /> Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
-                        {isCurrent && <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>}
+                        <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
                     </div>
                     <table className="formal-table">
                         <thead>
@@ -328,7 +252,7 @@ const WeeklyCard = ({ data }) => {
                                 <th style={{ width: '25%' }}>Naam</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Verwachte Duur</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Duur</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
@@ -433,7 +357,7 @@ const WeeklyCard = ({ data }) => {
                 </section>
 
                 {/* 3a. Verbruik uit Levering */}
-                <section style={{ flex: 1, minWidth: '200px' }}>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
                         <TrendingUp size={16} /> Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
                     </h4>
@@ -441,22 +365,21 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Start Week</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Start</th>
                             </tr>
                         </thead>
                         <tbody>
                             {consumptionFromDelivery.map(c => {
-                                const isCompleted = c.completed && c.effDuration > 0;
                                 return (
                                     <tr key={c.id}>
                                         <td>{c.displayName}</td>
                                         <td style={{ textAlign: 'center' }}>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
                                         <td style={{ textAlign: 'center' }}>
                                             <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
+                                                <span>{c.weeksSincePurchase} / </span>
                                                 <EditableCell
                                                     value={c.effDuration ?? (c.estDuration || '---')}
                                                     type={c.effDuration ? 'number' : 'text'}
@@ -496,7 +419,7 @@ const WeeklyCard = ({ data }) => {
                 </section>
 
                 {/* 3b. Verbruik uit Stock */}
-                <section style={{ flex: 1, minWidth: '200px' }}>
+                <section style={{ flex: 1, minWidth: '300px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
                         <TrendingUp size={16} /> Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                     </h4>
@@ -504,10 +427,10 @@ const WeeklyCard = ({ data }) => {
                         <thead>
                             <tr>
                                 <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal (aankoop)</th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Start Week</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Start</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
@@ -520,7 +443,7 @@ const WeeklyCard = ({ data }) => {
                                         <td style={{ textAlign: 'center' }}>€<EditableCell value={c.cost} type="number" onSave={val => updateItem('consumption', c.id, { cost: val })} /></td>
                                         <td style={{ textAlign: 'center' }}>
                                             <span style={{ fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                <span>{c.weeksSincePurchase} &nbsp;/&nbsp; </span>
+                                                <span>{c.weeksSincePurchase} / </span>
                                                 <EditableCell
                                                     value={c.effDuration ?? (c.estDuration || '---')}
                                                     type={c.effDuration ? 'number' : 'text'}
@@ -552,27 +475,23 @@ const WeeklyCard = ({ data }) => {
                                             />
                                         </td>
                                         <td style={{ textAlign: 'center' }}>
-                                            {isCurrent && (
-                                                <>
-                                                    {!isCompleted ? (
-                                                        <button
-                                                            onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
-                                                            className="badge badge-danger"
-                                                            style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
-                                                        >
-                                                            OP
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
-                                                            className="badge badge-warning"
-                                                            title="Heropen item (niet op)"
-                                                            style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                                        >
-                                                            <RotateCcw size={14} />
-                                                        </button>
-                                                    )}
-                                                </>
+                                            {!isCompleted ? (
+                                                <button
+                                                    onClick={() => updateItem('consumption', c.id, { completed: true, effDuration: c.duration })}
+                                                    className="badge badge-danger"
+                                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                                >
+                                                    OP
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => updateItem('consumption', c.id, { completed: false, effDuration: null })}
+                                                    className="badge badge-warning"
+                                                    title="Heropen item (niet op)"
+                                                    style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                >
+                                                    <RotateCcw size={14} />
+                                                </button>
                                             )}
                                         </td>
                                     </tr>
@@ -598,11 +517,6 @@ WeeklyCard.propTypes = {
             deliveryTotal: PropTypes.number.isRequired,
             deliveries: PropTypes.array.isRequired,
             consumptionInWeek: PropTypes.array.isRequired,
-            inventoryAtStart: PropTypes.array,
-            inventoryAtEnd: PropTypes.array,
         }).isRequired,
     }).isRequired,
-    
 };
-
-export default Dashboard;

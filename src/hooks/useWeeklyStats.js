@@ -31,14 +31,16 @@ export const useWeeklyStats = () => {
                 const startAbs = getAbsoluteWeek(d.weekId);
                 const explicitConsumption = activeData.consumption.find(c => c.sourceId === d.id);
 
-                const duration = (explicitConsumption && explicitConsumption.effDuration) ? explicitConsumption.effDuration : (d.estDuration || 1);
+                const duration = explicitConsumption 
+                    ? (explicitConsumption.effDuration || explicitConsumption.estDuration || d.estDuration || 1) 
+                    : (d.estDuration || 1);
                 const endAbs = startAbs + duration - 1;
 
                 if (targetAbs < startAbs || targetAbs > endAbs) return null;
 
                 const completed = explicitConsumption ? explicitConsumption.completed : false;
                 if (completed) {
-                    const completedEndAbs = startAbs + (explicitConsumption.effDuration || 1) - 1;
+                    const completedEndAbs = startAbs + (explicitConsumption.effDuration || explicitConsumption.estDuration || 1) - 1;
                     if (completedEndAbs < targetAbs) return null;
                 }
 
@@ -52,13 +54,14 @@ export const useWeeklyStats = () => {
                     cost: cost,
                     qty: d.qty,
                     startDate: d.weekId,
-                    estDuration: d.estDuration,
+                    estDuration: explicitConsumption ? explicitConsumption.estDuration : d.estDuration,
                     effDuration: explicitConsumption ? explicitConsumption.effDuration : null,
                     completed: completed,
                     weeklyCost: weeklyCost,
                     weeksSincePurchase: weeksSincePurchase,
                     duration: duration,
                     sourceId: d.id,
+                    isOrdered: !!d.orderId
                 };
             })
             .filter(Boolean);
@@ -89,6 +92,7 @@ export const useWeeklyStats = () => {
                     weeksSincePurchase: weeksSincePurchase,
                     duration: duration,
                     sourceId: o.id,
+                    isOrdered: true,
                     isProjected: true
                 };
             })

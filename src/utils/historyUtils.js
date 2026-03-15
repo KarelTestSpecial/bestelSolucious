@@ -53,15 +53,15 @@ export const groupDataByWeek = (data) => {
     const weekId = item.startDate || getWeekIdFromDate(new Date(item.createdAt));
     if (grouped[weekId]) {
       grouped[weekId].verbruik.push(item);
-      grouped[weekId].totals.verbruik += item.cost || 0;
+      grouped[weekId].totals.verbruik += (item.weeklyCost || 0);
     }
   });
 
   // Calculate grand totals for each week
   Object.keys(grouped).forEach(weekId => {
     const totals = grouped[weekId].totals;
-    // We tonen alleen het geleverde totaal als hoofd-week-totaal om dubbeltelling te voorkomen
-    totals.grandTotal = totals.deliveries;
+    // We tonen het verbruik totaal als hoofd-week-totaal
+    totals.grandTotal = totals.verbruik;
     
     // Sort items within each type by date, most recent first
     grouped[weekId].orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

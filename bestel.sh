@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # --- 1. CONFIGURATIE ---
-export PATH="/home/kareltestspecial/.config/nvm/versions/node/v24.13.0/bin:$PATH"
-PROJECT_DIR="/home/kareltestspecial/kdc/bestelSolucious/bestel"
+# Gebruik $HOME en bepaal projectmap relatief aan de scriptlocatie
+export PATH="$HOME/.config/nvm/versions/node/v24.13.0/bin:$PATH"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR" || exit 1
 
 # --- 2. FUNCTIE OM ALLES TE DODEN (RAM PROTECTIE) ---

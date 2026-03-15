@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { Calendar, Download } from 'lucide-react';
-import { groupDataByWeek } from '../utils/historyUtils';
+import { getWeekIdsInRange } from '../utils/weekUtils';
 import HistoryWeeklyCard from './HistoryWeeklyCard';
 
 const HistoryView = () => {
-    const [data, setData] = useState({ orders: [], deliveries: [], verbruik: [] });
-    const [pagination, setPagination] = useState({});
+    const { activeData } = useAppContext();
+    const { getStatsForWeek } = useWeeklyStats();
     const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const today = new Date();
     const threeMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 3));
@@ -25,65 +27,32 @@ const HistoryView = () => {
         localStorage.setItem('historyEndDate', endDate);
     }, [startDate, endDate]);
 
-    useEffect(() => {
-        const fetchAllData = async () => {
-            const params = new URLSearchParams({
-                page: currentPage,
-                startDate,
-                endDate,
-                limit: 200
-            });
+    const weekIds = useMemo(() => {
+        if (!startDate || !endDate) return [];
+        return getWeekIdsInRange(startDate, endDate);
+    }, [startDate, endDate]);
 
-            try {
-                const [ordersRes, deliveriesRes, verbruikRes] = await Promise.all([
-                    fetch(`/api/history/orders?${params.toString()}`),
-                    fetch(`/api/history/deliveries?${params.toString()}`),
-                    fetch(`/api/history/verbruik?${params.toString()}`)
-                ]);
+    const paginatedWeeks = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return weekIds.slice(start, start + itemsPerPage);
+    }, [weekIds, currentPage]);
 
-                const ordersResult = await ordersRes.json();
-                const deliveriesResult = await deliveriesRes.json();
-                const verbruikResult = await verbruikRes.json();
-
-                setData({
-                    orders: ordersResult.items || [],
-                    deliveries: deliveriesResult.items || [],
-                    verbruik: verbruikResult.items || []
-                });
-                
-                // Calculate max pagination
-                const maxPages = Math.max(
-                    ordersResult.pagination?.totalPages || 0,
-                    deliveriesResult.pagination?.totalPages || 0,
-                    verbruikResult.pagination?.totalPages || 0
-                );
-                const totalItems = (ordersResult.pagination?.total || 0) + (deliveriesResult.pagination?.total || 0) + (verbruikResult.pagination?.total || 0);
-
-                setPagination({
-                    page: currentPage,
-                    totalPages: maxPages,
-                    total: totalItems,
-                    limit: 200
-                });
-            } catch (error) {
-                console.error("Failed to fetch history:", error);
-                setData({ orders: [], deliveries: [], verbruik: [] });
-                setPagination({});
-            }
-        };
-
-        if (startDate && endDate) {
-            fetchAllData();
-        }
-    }, [currentPage, startDate, endDate]);
+    const totalPages = Math.ceil(weekIds.length / itemsPerPage);
 
     const handleDownload = () => {
-        // Combine all data types for download
+        // Logic for download remains similar but could be updated to use processed stats
+        // For now keeping it based on activeData for simplicity or refactoring later
         const allItems = [
-            ...data.orders.map(item => ({ ...item, type: 'Bestelling' })),
-            ...data.deliveries.map(item => ({ ...item, type: 'Levering' })),
-            ...data.verbruik.map(item => ({ ...item, type: 'Verbruik' }))
-        ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            ...activeData.orders.map(item => ({ ...item, type: 'Bestelling' })),
+            ...activeData.deliveries.map(item => ({ ...item, type: 'Levering' })),
+            ...activeData.consumption.map(item => ({ ...item, type: 'Verbruik', weekId: item.startDate }))
+        ].filter(item => {
+            const date = new Date(item.createdAt);
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            return date >= start && date <= end;
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         const headers = ["Type", "Datum", "Week", "Product", "Details", "Totaal"];
         
@@ -96,7 +65,7 @@ const HistoryView = () => {
                 details = `${item.qty} x €${(item.price || 0).toFixed(2)}`;
                 total = `€${(item.qty * (item.price || 0)).toFixed(2)}`;
             } else if (item.type === 'Verbruik') {
-                details = `Kost per week: €${(item.weeklyCost || 0).toFixed(2)}`;
+                details = `Kost per week: €${(item.cost / (item.effDuration || item.estDuration || 1)).toFixed(2)}`;
                 total = `€${(item.cost || 0).toFixed(2)}`;
             }
             
@@ -140,10 +109,23 @@ const HistoryView = () => {
             </header>
             <div className="history-content">
                 {
-                    (data.orders.length > 0 || data.deliveries.length > 0 || data.verbruik.length > 0) ? (
-                        Object.entries(groupDataByWeek(data)).map(([weekId, weekData]) => (
-                            <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} />
-                        ))
+                    paginatedWeeks.length > 0 ? (
+                        paginatedWeeks.map(weekId => {
+                            const stats = getStatsForWeek(weekId);
+                            // Transform stats to the format expected by HistoryWeeklyCard
+                            const weekData = {
+                                orders: stats.orders,
+                                deliveries: stats.deliveries,
+                                verbruik: stats.consumptionInWeek,
+                                totals: {
+                                    orders: stats.orderTotal,
+                                    deliveries: stats.deliveryTotal,
+                                    verbruik: stats.totalConsumptionCost,
+                                    grandTotal: stats.totalConsumptionCost
+                                }
+                            };
+                            return <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} />;
+                        })
                     ) : (
                         <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                             Geen gegevens gevonden voor de geselecteerde periode.
@@ -152,12 +134,13 @@ const HistoryView = () => {
                 }
             </div>
             <footer style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
-                <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage <= 1}>Vorige</button>
-                <span>Pagina {pagination.page || 1} van {pagination.totalPages || 1}</span>
-                <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= (pagination.totalPages || 1)}>Volgende</button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>Vorige</button>
+                <span>Pagina {currentPage} van {totalPages || 1}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>Volgende</button>
             </footer>
         </div>
     );
 };
+
 
 export default HistoryView;
