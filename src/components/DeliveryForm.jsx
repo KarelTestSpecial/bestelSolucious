@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { getWeekIdFromDate } from '../utils/weekUtils';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const DeliveryForm = ({ onClose }) => {
@@ -24,10 +23,6 @@ const DeliveryForm = ({ onClose }) => {
     const isInSelectedWeek = order.weekId === weekId;
     return !isDelivered && isInSelectedWeek;
   });
-
-  console.log("Active Orders:", activeData.orders);
-  console.log("Active Deliveries:", activeData.deliveries);
-  console.log("Pending Orders:", pendingOrders);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,12 +67,12 @@ const DeliveryForm = ({ onClose }) => {
       <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', position: 'sticky', top: 0, background: 'rgba(30, 30, 45, 0.8)', padding: '0.5rem 0', zIndex: 10 }}>
           <h2>Levering Bevestigen</h2>
-          <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><X size={20} /></button>
+          <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><span style={{ fontSize: '20px' }}>❌</span></button>
         </div>
 
         {pendingOrders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <AlertCircle size={48} color="var(--warning-color)" style={{ marginBottom: '1rem' }} />
+            <span style={{ fontSize: '48px', display: 'block', marginBottom: '1rem' }}>⚠️</span>
             <p>Geen openstaande bestellingen gevonden.</p>
           </div>
         ) : (
@@ -127,7 +122,7 @@ const DeliveryForm = ({ onClose }) => {
             </div>
 
             <div className="alert-info" style={{ marginBottom: '1.5rem', background: 'rgba(52, 152, 219, 0.1)', padding: '1rem', borderRadius: '8px', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <CheckCircle2 size={24} color="var(--accent-color)" />
+                <span style={{ fontSize: '24px' }}>✅</span>
                 <p style={{ fontSize: '0.85rem', margin: 0 }}>
                     De verwachte verbruiksduur is overgenomen van de bestelling. Individuele aanpassingen kunnen na bevestiging in het dashboard gedaan worden.
                 </p>

@@ -1,57 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
-import { getWeekIdFromDate } from '../utils/weekUtils';
-import { X } from 'lucide-react';
+import { useProductList } from '../hooks/useProductList';
 import PropTypes from 'prop-types';
 
 const ConsumptionForm = ({ onClose }) => {
-    const { addAdhocDelivery, getCurrentWeekId } = useAppContext();
-
-    const getToday = () => new Date().toISOString().split('T')[0];
-    const [date, setDate] = useState(getToday());
+    const { addConsumption, getCurrentWeekId } = useAppContext();
+    const { getProductList } = useProductList();
+    
+    // Haal de lijst van bekende producten op
+    const products = useMemo(() => getProductList(), []);
 
     const [formData, setFormData] = useState({
         name: '',
-        cost: '',
         qty: 1,
+        cost: '',
         estDuration: 1,
-        weekId: getCurrentWeekId(),
-        source: 'Schenking/Stock'
+        startDate: getCurrentWeekId()
     });
 
-    useEffect(() => {
-        if (date) {
-            setFormData(prev => ({ ...prev, weekId: getWeekIdFromDate(date) }));
-        }
-    }, [date]);
+    // Automatisch prijs en duur invullen bij bekende productnaam
+    const handleNameChange = (e) => {
+        const name = e.target.value;
+        setFormData(prev => {
+            const newData = { ...prev, name };
+            const match = products.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (match) {
+                // Bereken totale cost op basis van prijs p/u en het huidige aantal
+                newData.cost = (match.price * newData.qty).toFixed(2);
+                newData.estDuration = match.estDuration.toString();
+            }
+            return newData;
+        });
+    };
+
+    // Update de totale kostprijs als het aantal verandert (voor bekende producten)
+    const handleQtyChange = (e) => {
+        const qty = parseFloat(e.target.value || 0);
+        setFormData(prev => {
+            const newData = { ...prev, qty };
+            const match = products.find(p => p.name.toLowerCase() === prev.name.toLowerCase());
+            if (match) {
+                newData.cost = (match.price * qty).toFixed(2);
+            }
+            return newData;
+        });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!formData.name || !formData.cost || !formData.qty) return;
 
-        const id = crypto.randomUUID();
-        const totalCost = parseFloat(formData.cost);
-        const qty = parseInt(formData.qty);
-        const unitPrice = totalCost / qty;
-
-        addAdhocDelivery({
-            id: id,
-            orderId: null, // No order
-            productId: 'ADHOC-' + id, // Dummy product ID
-            name: formData.name,
-            price: unitPrice,
-            qty: qty,
-            weekId: formData.weekId,
-            estDuration: parseInt(formData.estDuration),
-        }, {
-            sourceId: id,
-            sourceType: 'adhoc',
-            name: formData.name,
-            qty: qty,
-            cost: totalCost,
-            startDate: formData.weekId,
-            estDuration: parseInt(formData.estDuration),
-            effDuration: null,
+        addConsumption({
+            ...formData,
+            sourceId: 'manual-stock',
+            sourceType: 'stock',
+            cost: parseFloat(formData.cost),
+            qty: parseFloat(formData.qty),
+            estDuration: parseFloat(formData.estDuration),
             completed: false
         });
 
@@ -65,73 +71,72 @@ const ConsumptionForm = ({ onClose }) => {
         }}>
             <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                    <h2>Ad-hoc Invoer Registreren</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><X size={20} /></button>
+                    <h2>Verbruik uit Stock</h2>
+                    <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><span style={{ fontSize: '20px' }}>❌</span></button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <label>Product / Bron</label>
+                    <label>Product Naam</label>
                     <input
-                        className="input-field" placeholder="Bijv. Gift van buren, Stock..."
+                        className="input-field"
+                        placeholder="Bijv. Melk (uit voorraad)..."
+                        list="consumption-suggestions"
                         value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        onChange={handleNameChange}
                         required
                     />
+                    <datalist id="consumption-suggestions">
+                        {products.map((p, i) => (
+                            <option key={i} value={p.name} />
+                        ))}
+                    </datalist>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label>Totale Kostprijs</label>
-                            <input
-                                className="input-field" type="number" step="0.01"
-                                value={formData.cost}
-                                onChange={e => setFormData({ ...formData, cost: e.target.value })}
-                                onWheel={(e) => e.preventDefault()}
-                                required
-                            />
-                        </div>
                         <div>
                             <label>Aantal</label>
                             <input
-                                className="input-field" type="number"
+                                className="input-field"
+                                type="number" step="0.1"
                                 value={formData.qty}
-                                onChange={e => setFormData({ ...formData, qty: e.target.value })}
+                                onChange={handleQtyChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label>Totale Waarde (€)</label>
+                            <input
+                                className="input-field"
+                                type="number" step="0.01"
+                                value={formData.cost}
+                                onChange={e => setFormData({ ...formData, cost: e.target.value })}
                                 required
                             />
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                         <div>
-                            <label>Verwachte Duur (weken)</label>
+                        <div>
+                            <label>Verwachte Duur (w)</label>
                             <input
-                                className="input-field" type="number" min="1"
+                                className="input-field"
+                                type="number" min="1"
                                 value={formData.estDuration}
                                 onChange={e => setFormData({ ...formData, estDuration: e.target.value })}
-                                onWheel={(e) => e.preventDefault()}
                                 required
                             />
                         </div>
                         <div>
-                            <label>Datum van Invoer</label>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input
-                                    className="input-field"
-                                    type="date"
-                                    value={date}
-                                    onChange={e => setDate(e.target.value)}
-                                    onFocus={(e) => e.target.showPicker?.()}
-                                    onClick={(e) => e.target.showPicker?.()}
-                                    required
-                                    style={{ marginBottom: 0, flex: 1 }}
-                                />
-                            </div>
+                            <label>Start Week</label>
+                            <input
+                                className="input-field"
+                                value={formData.startDate}
+                                disabled
+                                style={{ background: 'rgba(255,255,255,0.05)', cursor: 'not-allowed' }}
+                            />
                         </div>
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: '0.2rem' }}>
-                        Week: <strong>{formData.weekId}</strong>
-                    </p>
 
-                    <button type="submit" style={{ width: '100%', marginTop: '1rem' }}>Registreer Invoer</button>
+                    <button type="submit" style={{ width: '100%', marginTop: '1.5rem' }}>Verbruik Registreren</button>
                 </form>
             </div>
         </div>,

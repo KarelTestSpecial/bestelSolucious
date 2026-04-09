@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Truck, TrendingUp, Trash2, RotateCcw, ArrowUpCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { getDateOfTuesday, getWeekIdFromDate, getISODateOfTuesday, parseWeekId } from '../utils/weekUtils';
+import { useProductList } from '../hooks/useProductList';
 import PropTypes from 'prop-types';
 
 export const EditableCell = ({ value, onSave, type = 'text', suffix = '', precision = 2 }) => {
@@ -79,12 +79,46 @@ EditableCell.propTypes = {
 };
 
 export const WeeklyCard = ({ data }) => {
-    const { updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
+    const { activeData, updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
+    const { getProductList } = useProductList();
+    
+    // Gebruik de volledige data om de productlijst te genereren
+    const products = useMemo(() => getProductList(), [activeData]);
+
     const { weekId, offset, stats } = data;
     const isCurrent = offset === 0;
     
     const [newOrder, setNewOrder] = useState(null);
     const [newDelivery, setNewDelivery] = useState(null);
+
+    // Auto-fill handlers voor nieuwe bestellingen/leveringen
+    const handleOrderNameChange = (e) => {
+        const name = e.target.value;
+        setNewOrder(prev => {
+            const newData = { ...prev, name };
+            const match = products.find(p => p.name.toLowerCase().trim() === name.toLowerCase().trim());
+            console.log(`Auto-fill Zoekopdracht (Bestelling): "${name}"`, match ? `GEVONDEN: €${match.price}` : "NIET GEVONDEN");
+            if (match) {
+                newData.price = match.price.toString();
+                newData.estDuration = parseInt(match.estDuration || 1);
+            }
+            return newData;
+        });
+    };
+
+    const handleDeliveryNameChange = (e) => {
+        const name = e.target.value;
+        setNewDelivery(prev => {
+            const newData = { ...prev, name };
+            const match = products.find(p => p.name.toLowerCase().trim() === name.toLowerCase().trim());
+            console.log(`Auto-fill Zoekopdracht (Levering): "${name}"`, match ? `GEVONDEN: €${match.price}` : "NIET GEVONDEN");
+            if (match) {
+                newData.price = match.price.toString();
+                newData.estDuration = parseInt(match.estDuration || 1);
+            }
+            return newData;
+        });
+    };
 
     const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.isOrdered);
     const consumptionFromStock = stats.consumptionInWeek.filter(c => !c.isOrdered);
@@ -93,7 +127,7 @@ export const WeeklyCard = ({ data }) => {
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
 
     return (
-        <div className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none', marginBottom: '1rem' }}>
+        <div data-debug-version="2" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
                     Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
@@ -114,7 +148,7 @@ export const WeeklyCard = ({ data }) => {
                         style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
                         title="Scroll naar boven"
                       >
-                        <ArrowUpCircle size={22} />
+                        ⬆️
                     </button>
                 </div>
             </div>
@@ -124,7 +158,7 @@ export const WeeklyCard = ({ data }) => {
                 <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
-                            <ShoppingCart size={16} /> Bestellingen (€{stats.orderTotal.toFixed(2)})
+                            🛒 Bestellingen (€{stats.orderTotal.toFixed(2)})
                         </h4>
                         <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
                     </div>
@@ -153,7 +187,7 @@ export const WeeklyCard = ({ data }) => {
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
                                             title="Verwijder bestelling"
                                         >
-                                            <Trash2 size={10} />
+                                            🗑️
                                         </button>
                                     </td>
                                 </tr>
@@ -165,10 +199,16 @@ export const WeeklyCard = ({ data }) => {
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
                                             placeholder="Product naam"
+                                            list={`suggestions-order-${weekId}`}
                                             value={newOrder.name}
-                                            onChange={e => setNewOrder({ ...newOrder, name: e.target.value })}
+                                            onChange={handleOrderNameChange}
                                             autoFocus
                                         />
+                                        <datalist id={`suggestions-order-${weekId}`}>
+                                            {products.map((p, i) => (
+                                                <option key={i} value={p.name} />
+                                            ))}
+                                        </datalist>
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <input
@@ -242,7 +282,7 @@ export const WeeklyCard = ({ data }) => {
                 <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
-                            <Truck size={16} /> Leveringen (€{stats.deliveryTotal.toFixed(2)})
+                            🚚 Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
                         <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
                     </div>
@@ -271,7 +311,7 @@ export const WeeklyCard = ({ data }) => {
                                             style={{ background: 'transparent', color: 'var(--danger-color)', padding: '4px' }}
                                             title="Verwijder levering"
                                         >
-                                            <Trash2 size={11} />
+                                            🗑️
                                         </button>
                                     </td>
                                 </tr>
@@ -283,10 +323,16 @@ export const WeeklyCard = ({ data }) => {
                                             className="input-field"
                                             style={{ margin: 0, padding: '2px 5px', fontSize: '0.9rem', width: '100%' }}
                                             placeholder="Product naam"
+                                            list={`suggestions-delivery-${weekId}`}
                                             value={newDelivery.name}
-                                            onChange={e => setNewDelivery({ ...newDelivery, name: e.target.value })}
+                                            onChange={handleDeliveryNameChange}
                                             autoFocus
                                         />
+                                        <datalist id={`suggestions-delivery-${weekId}`}>
+                                            {products.map((p, i) => (
+                                                <option key={i} value={p.name} />
+                                            ))}
+                                        </datalist>
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <input
@@ -359,7 +405,7 @@ export const WeeklyCard = ({ data }) => {
                 {/* 3a. Verbruik uit Levering */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
+                        📈 Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
@@ -421,7 +467,7 @@ export const WeeklyCard = ({ data }) => {
                 {/* 3b. Verbruik uit Stock */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
+                        📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
@@ -490,7 +536,7 @@ export const WeeklyCard = ({ data }) => {
                                                     title="Heropen item (niet op)"
                                                     style={{ border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
                                                 >
-                                                    <RotateCcw size={14} />
+                                                    🔄
                                                 </button>
                                             )}
                                         </td>

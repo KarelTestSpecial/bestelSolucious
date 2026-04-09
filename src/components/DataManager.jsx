@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { getWeekIdFromDate } from '../utils/weekUtils';
-import { Download, Trash2, Database, FileText, Info } from 'lucide-react';
 
 const DataManager = () => {
     const { exportData, importData, activeData, addBatchOrders, clearDatabase } = useAppContext();
@@ -125,7 +124,7 @@ const DataManager = () => {
                 <section className="glass-panel" style={{ gridColumn: '1 / -1' }}>
                     <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                         <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)' }}>
-                            <FileText /> Batch Import Bestellingen
+                            <span style={{ fontSize: '24px' }}>📄</span> Batch Import Bestellingen
                         </h2>
                         <p style={{ color: 'var(--text-muted)' }}>
                             Kopieer gegevens uit Excel of upload een CSV-bestand om snel meerdere bestellingen toe te voegen.
@@ -151,7 +150,7 @@ const DataManager = () => {
                             </div>
                             
                             <div className="detail-section" style={{ marginTop: '1rem' }}>
-                                <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Info size={14}/> Instructies</h4>
+                                <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ fontSize: '14px' }}>ℹ️</span> Instructies</h4>
                                 <ul style={{ fontSize: '0.9rem', paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
                                     <li>Zorg dat elke regel 1 product is.</li>
                                     <li>Gebruik puntkomma (;), tab of komma als scheidingsteken.</li>
@@ -186,7 +185,7 @@ const DataManager = () => {
                                         style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer' }}
                                     />
                                     <button className="badge-warning" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                        <FileText size={16} /> Kies Bestand
+                                        <span style={{ fontSize: '16px' }}>📄</span> Kies Bestand
                                     </button>
                                 </div>
                                 <button 
@@ -203,7 +202,7 @@ const DataManager = () => {
 
                 {/* 2. OVERIGE FUNCTIES (KLEINER) */}
                 <section className="glass-panel">
-                    <h3><Database size={18} /> Statistieken</h3>
+                    <h3><span style={{ fontSize: '18px' }}>🗄️</span> Statistieken</h3>
                     <div style={{ marginTop: '1rem' }}>
                         <p>Actieve Bestellingen: {activeData.orders.length}</p>
                         <p>Actieve Leveringen: {activeData.deliveries.length}</p>
@@ -212,7 +211,7 @@ const DataManager = () => {
                 </section>
 
                 <section className="glass-panel">
-                    <h3><Download size={18} /> Backup / Restore</h3>
+                    <h3><span style={{ fontSize: '18px' }}>📥</span> Backup / Restore</h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                         Backup downloaden of een eerdere backup herstellen.
                     </p>
@@ -235,7 +234,7 @@ const DataManager = () => {
                 </section>
 
                 <section className="glass-panel" style={{ border: '1px solid var(--danger-color)' }}>
-                    <h3><Trash2 size={18} color="var(--danger-color)" /> Reset</h3>
+                    <h3><span style={{ fontSize: '18px' }}>🗑️</span> Reset</h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '1rem 0' }}>
                         Wis alle data in de database permanent.
                     </p>

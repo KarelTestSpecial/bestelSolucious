@@ -1,5 +1,4 @@
 import React from 'react';
-import { ShoppingCart, Truck, TrendingUp, ArrowUpCircle } from 'lucide-react';
 import { getDateOfTuesday, parseWeekId } from '../utils/weekUtils';
 import PropTypes from 'prop-types';
 
@@ -33,7 +32,7 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                         style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
                         title="Scroll naar boven"
                       >
-                        <ArrowUpCircle size={22} />
+                        ⬆️
                     </button>
                 </div>
             </div>
@@ -43,7 +42,7 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
-                            <ShoppingCart size={16} /> Bestellingen (€{totals.orders.toFixed(2)})
+                            🛒 Bestellingen (€{totals.orders.toFixed(2)})
                         </h4>
                     </div>
                     <table className="formal-table">
@@ -72,7 +71,7 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
-                            <Truck size={16} /> Leveringen (€{totals.deliveries.toFixed(2)})
+                            🚚 Leveringen (€{totals.deliveries.toFixed(2)})
                         </h4>
                     </div>
                     <table className="formal-table">
@@ -100,7 +99,7 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                 {/* 3a. Verbruik uit Levering */}
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
+                        📈 Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>
@@ -125,7 +124,7 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                 {/* 3b. Verbruik uit Stock */}
                 <section style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        <TrendingUp size={16} /> Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
+                        📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                     </h4>
                     <table className="formal-table">
                         <thead>

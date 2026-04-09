@@ -1,9 +1,9 @@
 // Data cleanup script to fix duration-depleted items
 // This script will mark consumption records as completed when their duration has expired
 
-import { PrismaClient } from '@prisma/client';
+import Database from 'better-sqlite3';
 
-const prisma = new PrismaClient();
+const db = new Database('prisma/dev.db');
 
 // Helper function to get week ID from absolute week (reverse of getAbsoluteWeek)
 const getWeekIdFromAbs = (absWeek) => {
@@ -63,11 +63,7 @@ async function cleanupDurationDepletedItems() {
         console.log(`Current week: ${currentWeekId} (abs: ${currentAbsWeek})`);
         
         // Get all consumption records that are not completed
-        const uncompletedConsumption = await prisma.consumption.findMany({
-            where: {
-                completed: false
-            }
-        });
+        const uncompletedConsumption = db.prepare('SELECT * FROM Consumption WHERE completed = 0').all();
         
         console.log(`Found ${uncompletedConsumption.length} uncompleted consumption records`);
         
@@ -78,9 +74,7 @@ async function cleanupDurationDepletedItems() {
             let delivery = null;
             
             if (consumption.sourceType === 'delivery') {
-                delivery = await prisma.delivery.findUnique({
-                    where: { id: consumption.sourceId }
-                });
+                delivery = db.prepare('SELECT * FROM Delivery WHERE id = ?').get(consumption.sourceId);
             }
             
             if (!delivery) {
@@ -100,13 +94,8 @@ async function cleanupDurationDepletedItems() {
                 console.log(`⏰ ${consumption.name} should be depleted - marking as completed`);
                 
                 // Mark as completed with effective duration
-                await prisma.consumption.update({
-                    where: { id: consumption.id },
-                    data: {
-                        completed: true,
-                        effDuration: estDuration
-                    }
-                });
+                db.prepare('UPDATE Consumption SET completed = 1, effDuration = ? WHERE id = ?')
+                  .run(estDuration, consumption.id);
                 
                 updatedCount++;
                 console.log(`✅ Updated ${consumption.name} to completed (duration: ${estDuration} weeks)`);
@@ -120,7 +109,7 @@ async function cleanupDurationDepletedItems() {
     } catch (error) {
         console.error('❌ Error during cleanup:', error);
     } finally {
-        await prisma.$disconnect();
+        db.close();
     }
 }
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
-import { Calendar, Download } from 'lucide-react';
 import { getWeekIdsInRange } from '../utils/weekUtils';
 import HistoryWeeklyCard from './HistoryWeeklyCard';
 
@@ -93,7 +92,7 @@ const HistoryView = () => {
                 <h1>Historiek & Archief</h1>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                     <div className="glass-panel" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Calendar size={18} color="var(--text-muted)" />
+                        <span style={{ fontSize: '18px' }}>📅</span>
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
                         <span>-</span>
                         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
@@ -101,7 +100,7 @@ const HistoryView = () => {
                     <div style={{ flexGrow: 1 }}></div>
                     <div className="glass-panel" style={{ padding: '0.5rem' }}>
                         <button onClick={handleDownload} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Download size={18} />
+                            <span style={{ fontSize: '18px' }}>📥</span>
                             Download (TSV)
                         </button>
                     </div>

@@ -11,12 +11,16 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
   "dependencies": {
-    "@prisma/client": "5.11.0",
+    "better-sqlite3": "^12.8.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "lucide-react": "^0.446.0",
-    "prisma": "5.11.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { getWeekIdFromDate } from '../utils/weekUtils';
-import { X } from 'lucide-react';
+import { useProductList } from '../hooks/useProductList';
 import PropTypes from 'prop-types';
 
 const OrderForm = ({ onClose }) => {
     const { addOrder, getCurrentWeekId } = useAppContext();
+    const { getProductList } = useProductList();
+    
+    // Memoize product list to avoid unnecessary recalculations
+    const products = useMemo(() => getProductList(), []);
     
     // Helper om standaard datum te zetten (vandaag)
     const getToday = () => new Date().toISOString().split('T')[0];
@@ -26,6 +30,22 @@ const OrderForm = ({ onClose }) => {
             setFormData(prev => ({ ...prev, weekId: getWeekIdFromDate(date) }));
         }
     }, [date]);
+
+    // Automatisch prijs en duur invullen bij bekende productnaam
+    const handleNameChange = (e) => {
+        const name = e.target.value;
+        setFormData(prev => {
+            const newData = { ...prev, name };
+            
+            // Zoek product (case-insensitive)
+            const match = products.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (match) {
+                newData.price = match.price.toString();
+                newData.estDuration = match.estDuration.toString();
+            }
+            return newData;
+        });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -54,7 +74,7 @@ const OrderForm = ({ onClose }) => {
             <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                     <h2>Nieuwe Bestelling</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><X size={20} /></button>
+                    <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><span style={{ fontSize: '20px' }}>❌</span></button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -62,10 +82,16 @@ const OrderForm = ({ onClose }) => {
                     <input
                         className="input-field"
                         placeholder="Bijv. Melk, Brood..."
+                        list="product-suggestions"
                         value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        onChange={handleNameChange}
                         required
                     />
+                    <datalist id="product-suggestions">
+                        {products.map((p, i) => (
+                            <option key={i} value={p.name} />
+                        ))}
+                    </datalist>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>

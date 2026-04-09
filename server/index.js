@@ -1,9 +1,9 @@
 // server/index.js
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-import crypto from 'node:crypto'; // TOEGEVOEGD: Nodig voor UUID generatie
+import Database from 'better-sqlite3';
+import crypto from 'node:crypto';
 
-const prisma = new PrismaClient();
+const db = new Database('prisma/dev.db');
 const app = express();
 const PORT = 3000;
 
@@ -11,35 +11,35 @@ app.use(express.json());
 
 // --- GET Endpoints (Data ophalen) ---
 
-app.get('/api/products', async (req, res) => {
-  const products = await prisma.product.findMany();
+app.get('/api/products', (req, res) => {
+  const products = db.prepare('SELECT * FROM Product').all();
   res.json(products);
 });
 
-app.get('/api/orders', async (req, res) => {
-  const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
+app.get('/api/orders', (req, res) => {
+  const orders = db.prepare('SELECT * FROM "Order" ORDER BY createdAt DESC').all();
   res.json(orders);
 });
 
-app.get('/api/deliveries', async (req, res) => {
-  const deliveries = await prisma.delivery.findMany({ orderBy: { createdAt: 'desc' } });
+app.get('/api/deliveries', (req, res) => {
+  const deliveries = db.prepare('SELECT * FROM Delivery ORDER BY createdAt DESC').all();
   res.json(deliveries);
 });
 
-app.get('/api/consumption', async (req, res) => {
-  const consumption = await prisma.consumption.findMany({ orderBy: { createdAt: 'desc' } });
+app.get('/api/consumption', (req, res) => {
+  const consumption = db.prepare('SELECT * FROM Consumption ORDER BY createdAt DESC').all()
+    .map(c => ({ ...c, completed: !!c.completed }));
   res.json(consumption);
 });
 
 // Een gecombineerd endpoint voor alle data (om requests te besparen)
-app.get('/api/full-data', async (req, res) => {
+app.get('/api/full-data', (req, res) => {
   try {
-    const [products, orders, deliveries, consumption] = await Promise.all([
-      prisma.product.findMany(),
-      prisma.order.findMany(),
-      prisma.delivery.findMany(),
-      prisma.consumption.findMany()
-    ]);
+    const products = db.prepare('SELECT * FROM Product').all();
+    const orders = db.prepare('SELECT * FROM "Order"').all();
+    const deliveries = db.prepare('SELECT * FROM Delivery').all();
+    const consumption = db.prepare('SELECT * FROM Consumption').all()
+      .map(c => ({ ...c, completed: !!c.completed }));
     res.json({ products, orders, deliveries, consumption });
   } catch (error) {
     console.error("Error fetching full data:", error);
@@ -59,62 +59,67 @@ const getWeekIdFromDate = (dateInput) => {
 
 // --- HISTORY Endpoints ---
 
-const handleHistoryRequest = async (req, res, modelName) => {
+const handleHistoryRequest = (req, res, tableName) => {
   try {
     const { startDate, endDate } = req.query;
     const page = parseInt(req.query.page || '1', 10);
     const limit = parseInt(req.query.limit || '10', 10);
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-    const where = {};
+    let query = `SELECT * FROM "${tableName}"`;
+    let countQuery = `SELECT COUNT(*) as total FROM "${tableName}"`;
+    const params = [];
+
     if (startDate && endDate) {
       const endOfDay = new Date(endDate);
       endOfDay.setHours(23, 59, 59, 999);
-      where.createdAt = { gte: new Date(startDate), lte: endOfDay };
+      query += ` WHERE createdAt >= ? AND createdAt <= ?`;
+      countQuery += ` WHERE createdAt >= ? AND createdAt <= ?`;
+      params.push(new Date(startDate).toISOString(), endOfDay.toISOString());
     }
 
-    const model = prisma[modelName];
-    const [items, total] = await prisma.$transaction([
-      model.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      model.count({ where }),
-    ]);
+    query += ` ORDER BY createdAt DESC LIMIT ? OFFSET ?`;
+    const items = db.prepare(query).all(...params, limit, offset);
+    const totalResult = db.prepare(countQuery).get(...params);
+    const total = totalResult ? totalResult.total : 0;
 
     res.json({ items, pagination: { total, page, limit, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
-    console.error(`Error fetching history for ${modelName}:`, error);
-    res.status(500).json({ error: `Ophalen ${modelName} historie mislukt` });
+    console.error(`Error fetching history for ${tableName}:`, error);
+    res.status(500).json({ error: `Ophalen ${tableName} historie mislukt` });
   }
 };
 
-app.get('/api/history/orders', (req, res) => handleHistoryRequest(req, res, 'order'));
-app.get('/api/history/deliveries', (req, res) => handleHistoryRequest(req, res, 'delivery'));
+app.get('/api/history/orders', (req, res) => handleHistoryRequest(req, res, 'Order'));
+app.get('/api/history/deliveries', (req, res) => handleHistoryRequest(req, res, 'Delivery'));
 
-app.get('/api/history/verbruik', async (req, res) => {
+app.get('/api/history/verbruik', (req, res) => {
     try {
         const { startDate, endDate } = req.query;
         const page = parseInt(req.query.page || '1', 10);
         const limit = parseInt(req.query.limit || '10', 10);
-        const skip = (page - 1) * limit;
+        const offset = (page - 1) * limit;
 
-        const where = {};
+        let query = `SELECT * FROM Consumption`;
+        let countQuery = `SELECT COUNT(*) as total FROM Consumption`;
+        const params = [];
+
         if (startDate && endDate) {
             const endOfDay = new Date(endDate);
             endOfDay.setHours(23, 59, 59, 999);
-            where.createdAt = { gte: new Date(startDate), lte: endOfDay };
+            query += ` WHERE createdAt >= ? AND createdAt <= ?`;
+            countQuery += ` WHERE createdAt >= ? AND createdAt <= ?`;
+            params.push(new Date(startDate).toISOString(), endOfDay.toISOString());
         }
 
-        const [consumptionItems, total] = await prisma.$transaction([
-            prisma.consumption.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' }
-            }),
-            prisma.consumption.count({ where }),
-        ]);
+        query += ` ORDER BY createdAt DESC LIMIT ? OFFSET ?`;
+        const consumptionItems = db.prepare(query).all(...params, limit, offset);
+        const totalResult = db.prepare(countQuery).get(...params);
+        const total = totalResult ? totalResult.total : 0;
 
         const items = consumptionItems.map(c => ({
             ...c,
+            completed: !!c.completed,
             weekId: c.startDate, // In de app is startDate de weekId voor consumptie
             weeklyCost: c.cost / (c.effDuration || c.estDuration || 1)
         }));
@@ -132,27 +137,23 @@ app.get('/api/history/verbruik', async (req, res) => {
 
 // --- POST Endpoints (Data opslaan) ---
 
-app.post('/api/orders', async (req, res) => {
+app.post('/api/orders', (req, res) => {
   try {
     const data = req.body;
-    let product = await prisma.product.findFirst({ where: { name: data.name } });
+    let product = db.prepare('SELECT * FROM Product WHERE name = ?').get(data.name);
     
     if (!product) {
-      product = await prisma.product.create({ 
-        data: { name: data.name, id: data.productId || crypto.randomUUID() } 
-      });
+      const id = data.productId || crypto.randomUUID();
+      db.prepare('INSERT INTO Product (id, name, stock) VALUES (?, ?, ?)').run(id, data.name, 0);
+      product = { id, name: data.name, stock: 0 };
     }
 
-    const newOrder = await prisma.order.create({
-      data: {
-        name: data.name,
-        price: parseFloat(data.price),
-        qty: parseFloat(data.qty), // AANGEPAST: parseFloat i.p.v. parseInt
-        weekId: data.weekId,
-        estDuration: parseFloat(data.estDuration || 1),
-        productId: product.id,
-      }
-    });
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    db.prepare('INSERT INTO "Order" (id, productId, name, price, qty, estDuration, weekId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, product.id, data.name, parseFloat(data.price), parseFloat(data.qty), parseFloat(data.estDuration || 1), data.weekId, createdAt);
+    
+    const newOrder = db.prepare('SELECT * FROM "Order" WHERE id = ?').get(id);
     res.json(newOrder);
   } catch (error) {
     console.error("Error creating order:", error);
@@ -160,64 +161,92 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-app.post('/api/orders/batch', async (req, res) => {
-  // TOEGEVOEGD: Try/Catch blok om crashes te voorkomen
+app.post('/api/orders/batch', (req, res) => {
   try {
     const { orders, weekId } = req.body; 
     const results = [];
 
-    for (const item of orders) {
-      // Gebruik backend crypto als fallback als frontend geen ID stuurt
-      const productId = item.productId || crypto.randomUUID(); 
-      
-      // 1. Zoek of maak product
-      let product = await prisma.product.findFirst({ where: { name: item.name } });
-      if (!product) {
-        product = await prisma.product.create({ 
-          data: { name: item.name, id: productId } 
-        });
-      }
+    const insertProduct = db.prepare('INSERT INTO Product (id, name, stock) VALUES (?, ?, ?)');
+    const insertOrder = db.prepare('INSERT INTO "Order" (id, productId, name, price, qty, estDuration, weekId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const getProduct = db.prepare('SELECT * FROM Product WHERE name = ?');
 
-      // 2. Maak bestelling
-      const order = await prisma.order.create({
-        data: {
-          productId: product.id,
-          name: product.name,
-          price: parseFloat(item.price || 0),
-          qty: parseFloat(item.qty || 1), // AANGEPAST: parseFloat zodat 0.5 niet 0 wordt
-          estDuration: parseFloat(item.estDuration || 1),
-          weekId: weekId
+    const transaction = db.transaction((orders, weekId) => {
+      for (const item of orders) {
+        let product = getProduct.get(item.name);
+        if (!product) {
+          const productId = item.productId || crypto.randomUUID();
+          insertProduct.run(productId, item.name, 0);
+          product = { id: productId, name: item.name };
         }
-      });
-      results.push(order);
-    }
 
+        const orderId = crypto.randomUUID();
+        const createdAt = new Date().toISOString();
+        insertOrder.run(
+          orderId,
+          product.id,
+          product.name,
+          parseFloat(item.price || 0),
+          parseFloat(item.qty || 1),
+          parseFloat(item.estDuration || 1),
+          weekId,
+          createdAt
+        );
+        results.push({ id: orderId });
+      }
+    });
+
+    transaction(orders, weekId);
     res.json({ success: true, count: results.length });
   } catch (error) {
-    console.error("Batch import error:", error); // Dit toont de echte fout in Terminal 1
+    console.error("Batch import error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.post('/api/deliveries', async (req, res) => {
+app.post('/api/deliveries', (req, res) => {
   try {
     const data = req.body;
-    const newDelivery = await prisma.delivery.create({ 
-      data: {
-        ...data,
-        estDuration: parseFloat(data.estDuration || 1)
-      } 
-    });
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    db.prepare('INSERT INTO Delivery (id, orderId, productId, name, price, qty, estDuration, weekId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(
+        id,
+        data.orderId || null,
+        data.productId,
+        data.name,
+        parseFloat(data.price),
+        parseFloat(data.qty),
+        parseFloat(data.estDuration || 1),
+        data.weekId,
+        createdAt
+      );
+    const newDelivery = db.prepare('SELECT * FROM Delivery WHERE id = ?').get(id);
     res.json(newDelivery);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/consumption', async (req, res) => {
+app.post('/api/consumption', (req, res) => {
   try {
     const data = req.body;
-    const newConsumption = await prisma.consumption.create({ data });
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    db.prepare('INSERT INTO Consumption (id, sourceId, sourceType, name, qty, cost, startDate, estDuration, effDuration, completed, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(
+        id,
+        data.sourceId,
+        data.sourceType,
+        data.name,
+        parseFloat(data.qty),
+        parseFloat(data.cost),
+        data.startDate,
+        parseFloat(data.estDuration),
+        data.effDuration ? parseFloat(data.effDuration) : null,
+        data.completed ? 1 : 0,
+        createdAt
+      );
+    const newConsumption = db.prepare('SELECT * FROM Consumption WHERE id = ?').get(id);
     res.json(newConsumption);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -226,45 +255,47 @@ app.post('/api/consumption', async (req, res) => {
 
 // --- PATCH Endpoints (Updates) ---
 
-app.patch('/api/consumption/:id', async (req, res) => {
+app.patch('/api/consumption/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await prisma.consumption.update({
-      where: { id },
-      data: req.body
-    });
-    res.json(updated);
+    const updates = req.body;
+    
+    const fields = Object.keys(updates).map(key => `"${key}" = ?`).join(', ');
+    const values = Object.values(updates).map(val => typeof val === 'boolean' ? (val ? 1 : 0) : val);
+    
+    db.prepare(`UPDATE Consumption SET ${fields} WHERE id = ?`).run(...values, id);
+    
+    const updated = db.prepare('SELECT * FROM Consumption WHERE id = ?').get(id);
+    res.json({ ...updated, completed: !!updated.completed });
   } catch (error) {
     console.error("Error updating consumption:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.patch('/api/deliveries/:id', async (req, res) => {
+app.patch('/api/deliveries/:id', (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
 
-    const updatedDelivery = await prisma.delivery.update({
-      where: { id },
-      data: updates
-    });
+    const fields = Object.keys(updates).map(key => `"${key}" = ?`).join(', ');
+    const values = Object.values(updates);
+    
+    db.prepare(`UPDATE Delivery SET ${fields} WHERE id = ?`).run(...values, id);
+    const updatedDelivery = db.prepare('SELECT * FROM Delivery WHERE id = ?').get(id);
 
     if (updates.price !== undefined || updates.qty !== undefined || updates.name !== undefined || updates.estDuration !== undefined) {
-      const consumption = await prisma.consumption.findFirst({
-        where: { sourceId: id }
-      });
+      const consumption = db.prepare('SELECT * FROM Consumption WHERE sourceId = ?').get(id);
 
       if (consumption) {
-        await prisma.consumption.update({
-          where: { id: consumption.id },
-          data: {
-            name: updates.name !== undefined ? updates.name : consumption.name,
-            qty: updates.qty !== undefined ? updates.qty : consumption.qty,
-            cost: (updates.price !== undefined ? updates.price : (updatedDelivery.price)) * (updates.qty !== undefined ? updates.qty : updatedDelivery.qty),
-            estDuration: updates.estDuration !== undefined ? updates.estDuration : consumption.estDuration
-          }
-        });
+        const newName = updates.name !== undefined ? updates.name : consumption.name;
+        const newQty = updates.qty !== undefined ? updates.qty : consumption.qty;
+        const newPrice = updates.price !== undefined ? updates.price : updatedDelivery.price;
+        const newCost = newPrice * newQty;
+        const newEstDuration = updates.estDuration !== undefined ? updates.estDuration : consumption.estDuration;
+
+        db.prepare('UPDATE Consumption SET name = ?, qty = ?, cost = ?, estDuration = ? WHERE id = ?')
+          .run(newName, newQty, newCost, newEstDuration, consumption.id);
       }
     }
 
@@ -275,13 +306,17 @@ app.patch('/api/deliveries/:id', async (req, res) => {
   }
 });
 
-app.patch('/api/orders/:id', async (req, res) => {
+app.patch('/api/orders/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await prisma.order.update({
-      where: { id },
-      data: req.body
-    });
+    const updates = req.body;
+    
+    const fields = Object.keys(updates).map(key => `"${key}" = ?`).join(', ');
+    const values = Object.values(updates);
+    
+    db.prepare(`UPDATE "Order" SET ${fields} WHERE id = ?`).run(...values, id);
+    
+    const updated = db.prepare('SELECT * FROM "Order" WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
     console.error("Error updating order:", error);
@@ -291,34 +326,36 @@ app.patch('/api/orders/:id', async (req, res) => {
 
 // --- DELETE Endpoints ---
 
-app.delete('/api/orders/:id', async (req, res) => {
+app.delete('/api/orders/:id', (req, res) => {
   const { id } = req.params;
-  await prisma.order.delete({ where: { id } });
+  db.prepare('DELETE FROM "Order" WHERE id = ?').run(id);
   res.json({ success: true });
 });
 
-app.delete('/api/deliveries/:id', async (req, res) => {
+app.delete('/api/deliveries/:id', (req, res) => {
   const { id } = req.params;
-  await prisma.consumption.deleteMany({ where: { sourceId: id } });
-  await prisma.delivery.delete({ where: { id } });
+  db.transaction(() => {
+    db.prepare('DELETE FROM Consumption WHERE sourceId = ?').run(id);
+    db.prepare('DELETE FROM Delivery WHERE id = ?').run(id);
+  })();
   res.json({ success: true });
 });
 
-app.delete('/api/consumption/:id', async (req, res) => {
+app.delete('/api/consumption/:id', (req, res) => {
   const { id } = req.params;
-  await prisma.consumption.delete({ where: { id } });
+  db.prepare('DELETE FROM Consumption WHERE id = ?').run(id);
   res.json({ success: true });
 });
 
 // --- CLEAR Endpoint ---
-app.delete('/api/clear', async (req, res) => {
+app.delete('/api/clear', (req, res) => {
   try {
-    await prisma.$transaction([
-      prisma.consumption.deleteMany(),
-      prisma.delivery.deleteMany(),
-      prisma.order.deleteMany(),
-      prisma.product.deleteMany(),
-    ]);
+    db.transaction(() => {
+      db.prepare('DELETE FROM Consumption').run();
+      db.prepare('DELETE FROM Delivery').run();
+      db.prepare('DELETE FROM "Order"').run();
+      db.prepare('DELETE FROM Product').run();
+    })();
     res.json({ success: true, message: "Database volledig gewist." });
   } catch (error) {
     console.error("Clear failed:", error);
@@ -327,60 +364,67 @@ app.delete('/api/clear', async (req, res) => {
 });
 
 // --- RESTORE Endpoint ---
-app.post('/api/restore', async (req, res) => {
+app.post('/api/restore', (req, res) => {
   const { products, orders, deliveries, consumption } = req.body;
   try {
-    const transaction = [];
-
-    if (products?.length) {
-      for (const p of products) {
-        transaction.push(prisma.product.upsert({
-          where: { id: p.id },
-          update: { name: p.name, stock: parseFloat(p.stock || 0) },
-          create: { id: p.id, name: p.name, stock: parseFloat(p.stock || 0) }
-        }));
+    db.transaction(() => {
+      if (products?.length) {
+        const upsertProduct = db.prepare(`
+          INSERT INTO Product (id, name, stock) VALUES (?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET name=excluded.name, stock=excluded.stock
+        `);
+        for (const p of products) {
+          upsertProduct.run(p.id, p.name, parseFloat(p.stock || 0));
+        }
       }
-    }
 
-    if (orders?.length) {
-      for (const o of orders) {
-        transaction.push(prisma.order.upsert({
-          where: { id: o.id },
-          update: { 
-            name: o.name, productId: o.productId, price: parseFloat(o.price), qty: parseFloat(o.qty), estDuration: parseFloat(o.estDuration || 1), weekId: o.weekId 
-          },
-          create: { 
-            id: o.id, name: o.name, productId: o.productId, price: parseFloat(o.price), qty: parseFloat(o.qty), estDuration: parseFloat(o.estDuration || 1), weekId: o.weekId, createdAt: o.createdAt 
-          }
-        }));
+      if (orders?.length) {
+        const upsertOrder = db.prepare(`
+          INSERT INTO "Order" (id, productId, name, price, qty, estDuration, weekId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET 
+            name=excluded.name, productId=excluded.productId, price=excluded.price, 
+            qty=excluded.qty, estDuration=excluded.estDuration, weekId=excluded.weekId
+        `);
+        for (const o of orders) {
+          upsertOrder.run(
+            o.id, o.productId, o.name, parseFloat(o.price), parseFloat(o.qty), 
+            parseFloat(o.estDuration || 1), o.weekId, o.createdAt || new Date().toISOString()
+          );
+        }
       }
-    }
 
-    if (deliveries?.length) {
-      for (const d of deliveries) {
-          transaction.push(prisma.delivery.upsert({
-              where: { id: d.id },
-              update: { name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId },
-              create: { id: d.id, name: d.name, productId: d.productId, orderId: d.orderId, price: parseFloat(d.price), qty: parseFloat(d.qty), estDuration: parseFloat(d.estDuration || 1), weekId: d.weekId, createdAt: d.createdAt }
-          }));
+      if (deliveries?.length) {
+        const upsertDelivery = db.prepare(`
+          INSERT INTO Delivery (id, orderId, productId, name, price, qty, estDuration, weekId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET 
+            name=excluded.name, productId=excluded.productId, orderId=excluded.orderId, 
+            price=excluded.price, qty=excluded.qty, estDuration=excluded.estDuration, weekId=excluded.weekId
+        `);
+        for (const d of deliveries) {
+          upsertDelivery.run(
+            d.id, d.orderId || null, d.productId, d.name, parseFloat(d.price), 
+            parseFloat(d.qty), parseFloat(d.estDuration || 1), d.weekId, d.createdAt || new Date().toISOString()
+          );
+        }
       }
-    }
 
-    if (consumption?.length) {
-      for (const c of consumption) {
-        transaction.push(prisma.consumption.upsert({
-          where: { id: c.id },
-          update: { 
-            name: c.name, qty: parseFloat(c.qty), cost: parseFloat(c.cost), startDate: c.startDate, estDuration: parseFloat(c.estDuration), effDuration: c.effDuration ? parseFloat(c.effDuration) : null, completed: c.completed
-          },
-          create: { 
-            id: c.id, sourceId: c.sourceId, sourceType: c.sourceType, name: c.name, qty: parseFloat(c.qty), cost: parseFloat(c.cost), startDate: c.startDate, estDuration: parseFloat(c.estDuration), effDuration: c.effDuration ? parseFloat(c.effDuration) : null, completed: c.completed, createdAt: c.createdAt
-          }
-        }));
+      if (consumption?.length) {
+        const upsertConsumption = db.prepare(`
+          INSERT INTO Consumption (id, sourceId, sourceType, name, qty, cost, startDate, estDuration, effDuration, completed, createdAt) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET 
+            name=excluded.name, qty=excluded.qty, cost=excluded.cost, startDate=excluded.startDate, 
+            estDuration=excluded.estDuration, effDuration=excluded.effDuration, completed=excluded.completed
+        `);
+        for (const c of consumption) {
+          upsertConsumption.run(
+            c.id, c.sourceId, c.sourceType, c.name, parseFloat(c.qty), parseFloat(c.cost), 
+            c.startDate, parseFloat(c.estDuration), c.effDuration ? parseFloat(c.effDuration) : null, 
+            c.completed ? 1 : 0, c.createdAt || new Date().toISOString()
+          );
+        }
       }
-    }
-
-    await prisma.$transaction(transaction);
+    })();
     res.json({ success: true, message: "Data succesvol samengevoegd." });
   } catch (error) {
     console.error("Restore failed:", error);

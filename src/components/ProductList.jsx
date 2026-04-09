@@ -1,6 +1,5 @@
 import React from 'react';
 import { useProductList } from '../hooks/useProductList';
-import { Tag, Clock } from 'lucide-react';
 
 const ProductList = () => {
     const { getProductList } = useProductList();
@@ -32,13 +31,13 @@ const ProductList = () => {
                                 <td style={{ textTransform: 'lowercase' }}><strong>{product.name}</strong></td>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Tag size={16} color="var(--success-color)" />
+                                        <span style={{ fontSize: '16px' }}>🏷️</span>
                                         €{product.price.toFixed(2)}
                                     </div>
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Clock size={16} color="var(--accent-color)" />
+                                        <span style={{ fontSize: '16px' }}>🕒</span>
                                         {product.estDuration} {product.estDuration === 1 ? 'week' : 'weken'}
                                     </div>
                                 </td>
