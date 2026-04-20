@@ -105,7 +105,7 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                         <thead>
                             <tr>
                                 <th>Product</th>
-                                <th>Bron</th>
+                                <th style={{ textAlign: 'center' }}>Status</th>
                                 <th style={{ textAlign: 'right' }}>Aankoop</th>
                                 <th style={{ textAlign: 'right' }}>Kost</th>
                             </tr>
@@ -115,10 +115,8 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                                 [...consumptionFromDelivery, ...consumptionFromStock].map(c => (
                                 <tr key={c.id}>
                                     <td style={{ fontWeight: '600' }}>{c.displayName}</td>
-                                    <td>
-                                        <span className={`badge ${c.isOrdered ? 'badge-success' : 'badge-warning'}`}>
-                                            {c.isOrdered ? 'Lev' : 'Stk'}
-                                        </span>
+                                    <td style={{ textAlign: 'center' }}>
+                                        {c.weeksSincePurchase} / {c.duration} w
                                     </td>
                                     <td style={{ textAlign: 'right' }}>€{(c.cost || 0).toFixed(2)}</td>
                                     <td style={{ textAlign: 'right', fontWeight: '700', color: 'var(--accent-primary)' }}>

@@ -259,9 +259,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     <td style={{ fontWeight: '500' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
-                                        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${c.progress * 100}%`, height: '100%', background: 'var(--accent-primary)' }} />
-                                        </div>
+                                        {c.weeksSincePurchase} / {c.duration} w
                                     </td>
                                     <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--accent-primary)' }}>€{c.weeklyCost.toFixed(2)}</td>
                                 </tr>
@@ -292,9 +290,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     <td style={{ fontWeight: '500' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
-                                        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${c.progress * 100}%`, height: '100%', background: 'var(--accent-secondary)' }} />
-                                        </div>
+                                        {c.weeksSincePurchase} / {c.duration} w
                                     </td>
                                     <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--accent-secondary)' }}>€{c.weeklyCost.toFixed(2)}</td>
                                 </tr>
