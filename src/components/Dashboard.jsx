@@ -23,39 +23,17 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard animate-slide-up">
-            <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderRadius: '24px' }}>
-                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                    <button 
-                        onClick={undo} 
-                        disabled={!canUndo}
-                        className="secondary"
-                        style={{ padding: '0.6rem 1rem', opacity: canUndo ? 1 : 0.5 }}
-                        title="Ongedaan maken"
-                    >
-                        ↩️ Undo
-                    </button>
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <button onClick={() => setActiveModal('order')}>
-                        ➕ Nieuwe Bestelling
-                    </button>
-                    <button onClick={() => setActiveModal('delivery')} style={{ background: 'linear-gradient(135deg, var(--accent-secondary), #059669)' }}>
-                        🚚 Levering
-                    </button>
-                    <button onClick={() => setActiveModal('consumption')} className="secondary" style={{ fontSize: '0.8rem' }}>
-                        + Ad-hoc
-                    </button>
-                </div>
-            </header>
-
             {activeModal === 'order' && <OrderForm onClose={() => setActiveModal(null)} />}
             {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
-            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {timeline.map((item) => (
-                    <WeeklyCard key={item.weekId} data={item} />
+                    <WeeklyCard 
+                        key={item.weekId} 
+                        data={item} 
+                        onOpenModal={setActiveModal}
+                    />
                 ))}
             </div>
         </div>

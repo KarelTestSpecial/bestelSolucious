@@ -78,7 +78,7 @@ EditableCell.propTypes = {
     precision: PropTypes.number,
 };
 
-export const WeeklyCard = ({ data }) => {
+export const WeeklyCard = ({ data, onOpenModal }) => {
     const { activeData, updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
     const { getProductList } = useProductList();
     
@@ -127,37 +127,29 @@ export const WeeklyCard = ({ data }) => {
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
 
     return (
-        <div data-debug-version="2" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ borderLeft: isCurrent ? '6px solid var(--accent-primary)' : '1px solid var(--border-color)', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>
+        <div data-debug-version="3" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ borderLeft: isCurrent ? '6px solid var(--accent-primary)' : '1px solid var(--border-color)', marginBottom: '1rem', padding: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700' }}>
                         📅 {getDateOfTuesday(weekId)}
                     </h3>
-                    <span className="badge badge-warning" style={{ opacity: 0.8 }}>{weekId}</span>
-                    {isCurrent && <span className="badge badge-success">LIVE</span>}
+                    <span className="badge badge-warning" style={{ opacity: 0.8, fontSize: '0.6rem' }}>{weekId}</span>
+                    {isCurrent && <span className="badge badge-success" style={{ fontSize: '0.6rem' }}>LIVE</span>}
                 </div>
                 
-                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                    <div className="stat-card" style={{ padding: '0 1rem' }}>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</div>
-                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Besteld</div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div className="stat-card" style={{ padding: '0 0.5rem' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.6rem' }}>Besteld</div>
                     </div>
-                    <div className="stat-card" style={{ padding: '0 1rem', borderLeft: '1px solid var(--border-color)' }}>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</div>
-                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Geleverd</div>
+                    <div className="stat-card" style={{ padding: '0 0.5rem', borderLeft: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.6rem' }}>Geleverd</div>
                     </div>
-                    <div className="stat-card" style={{ padding: '0 1rem', borderLeft: '1px solid var(--border-color)' }}>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--accent-primary)' }}>€{stats.totalConsumptionCost.toFixed(2)}</div>
-                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Verbruik</div>
+                    <div className="stat-card" style={{ padding: '0 0.5rem', borderLeft: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-primary)' }}>€{stats.totalConsumptionCost.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.6rem' }}>Verbruik</div>
                     </div>
-                    <button
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className="secondary"
-                        style={{ padding: '0.4rem 0.8rem', borderRadius: '50%' }}
-                        title="Scroll naar boven"
-                    >
-                        ⬆️
-                    </button>
                 </div>
             </div>
 
@@ -165,20 +157,28 @@ export const WeeklyCard = ({ data }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))', gap: '2.5rem' }}>
                 {/* 1. Bestellingen */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>
                             🛒 Bestellingen (€{stats.orderTotal.toFixed(2)})
                         </h4>
-                        <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                                onClick={() => onOpenModal('order')} 
+                                style={{ background: 'var(--accent-primary)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
+                            >
+                                Nieuwe Bestelling
+                            </button>
+                            <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '2px 8px', fontSize: '0.9rem', cursor: 'pointer' }}>+</button>
+                        </div>
                     </div>
-                    <table className="formal-table">
+                    <table className="formal-table" style={{ marginTop: 0 }}>
                         <thead>
                             <tr>
-                                <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Duur</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
+                                <th style={{ width: '30%' }}>Naam</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}>W</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
@@ -289,20 +289,28 @@ export const WeeklyCard = ({ data }) => {
                 
                 {/* 2. Effectieve Leveringen */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success-color)', margin: 0, fontSize: '0.9rem' }}>
                             🚚 Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
-                        <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '1rem', cursor: 'pointer' }}>+</button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                                onClick={() => onOpenModal('delivery')} 
+                                style={{ background: 'var(--success-color)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
+                            >
+                                Bevestig Levering
+                            </button>
+                            <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '0.9rem', cursor: 'pointer' }}>+</button>
+                        </div>
                     </div>
-                    <table className="formal-table">
+                    <table className="formal-table" style={{ marginTop: 0 }}>
                         <thead>
                             <tr>
-                                <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Aantal</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs (p/u)</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Duur</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Subtotaal</th>
+                                <th style={{ width: '30%' }}>Naam</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Prijs</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}>W</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
@@ -413,17 +421,17 @@ export const WeeklyCard = ({ data }) => {
 
                 {/* 3a. Verbruik uit Levering */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                         📈 Verbruik Levering (€{deliveryConsumptionTotal.toFixed(2)})
                     </h4>
-                    <table className="formal-table">
+                    <table className="formal-table" style={{ marginTop: 0 }}>
                         <thead>
                             <tr>
-                                <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Start</th>
+                                <th style={{ width: '30%' }}>Naam</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Status</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Kost</th>
+                                <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -475,17 +483,25 @@ export const WeeklyCard = ({ data }) => {
 
                 {/* 3b. Verbruik uit Stock */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, marginBottom: '0rem' }}>
-                        📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
-                    </h4>
-                    <table className="formal-table">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, fontSize: '0.9rem' }}>
+                            📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
+                        </h4>
+                        <button 
+                            onClick={() => onOpenModal('consumption')} 
+                            className="secondary"
+                            style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
+                        >
+                            + Ad-hoc
+                        </button>
+                    </div>
+                    <table className="formal-table" style={{ marginTop: 0 }}>
                         <thead>
                             <tr>
-                                <th style={{ width: '25%' }}>Naam</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Subtotaal</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>Voortgang</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Kost p/w</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Start</th>
+                                <th style={{ width: '30%' }}>Naam</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
+                                <th style={{ width: '25%', textAlign: 'center' }}>Status</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Kost</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>

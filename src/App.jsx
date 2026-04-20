@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useAppContext } from './context/AppContext';
 import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
 import DataManager from './components/DataManager';
@@ -8,15 +8,25 @@ import './index.css';
 
 function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const { undo, canUndo } = useAppContext();
 
     return (
         <div id="root">
-            <header className="container">
-                <nav className="glass-panel">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <header className="container" style={{ paddingBottom: 0 }}>
+                <nav className="glass-panel" style={{ margin: 0, borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <span style={{ fontSize: '1.5rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                             Bestel Tracker
                         </span>
+                        <button 
+                            onClick={undo} 
+                            disabled={!canUndo}
+                            className="secondary"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', opacity: canUndo ? 1 : 0.3, borderRadius: '10px' }}
+                            title="Ongedaan maken"
+                        >
+                            ↩️ Undo
+                        </button>
                     </div>
                     <div className="nav-links">
                         <button 
@@ -70,4 +80,3 @@ function App() {
 }
 
 export default App;
-

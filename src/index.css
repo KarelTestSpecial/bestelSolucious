@@ -47,7 +47,7 @@ body {
 }
 
 .container {
-  padding: 1.5rem 3rem;
+  padding: 0.5rem 1.5rem;
   width: 100%;
 }
 
@@ -57,9 +57,9 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: var(--glass-border);
-  border-radius: 20px;
+  border-radius: 16px;
   box-shadow: var(--card-shadow);
-  padding: 1.5rem;
+  padding: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
