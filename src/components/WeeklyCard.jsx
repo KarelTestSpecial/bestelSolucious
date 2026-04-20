@@ -88,8 +88,8 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
         });
     };
 
-    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.isOrdered);
-    const consumptionFromStock = stats.consumptionInWeek.filter(c => !c.isOrdered);
+    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.weeksSincePurchase <= 1);
+    const consumptionFromStock = stats.consumptionInWeek.filter(c => c.weeksSincePurchase > 1);
 
     const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + c.weeklyCost, 0);
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);

@@ -5,8 +5,8 @@ import PropTypes from 'prop-types';
 const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
     const { orders, deliveries, verbruik, totals } = weekData;
 
-    const consumptionFromDelivery = verbruik.filter(c => c.isOrdered);
-    const consumptionFromStock = verbruik.filter(c => !c.isOrdered);
+    const consumptionFromDelivery = verbruik.filter(c => c.weeksSincePurchase <= 1);
+    const consumptionFromStock = verbruik.filter(c => c.weeksSincePurchase > 1);
 
     const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + (c.weeklyCost || 0), 0);
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + (c.weeklyCost || 0), 0);
