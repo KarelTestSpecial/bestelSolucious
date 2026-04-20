@@ -2,7 +2,7 @@ import React from 'react';
 import { getDateOfTuesday, parseWeekId } from '../utils/weekUtils';
 import PropTypes from 'prop-types';
 
-const HistoryWeeklyCard = ({ weekId, weekData }) => {
+const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
     const { orders, deliveries, verbruik, totals } = weekData;
 
     const consumptionFromDelivery = verbruik.filter(c => c.weeksSincePurchase <= 1 && c.isOrdered);
@@ -75,9 +75,17 @@ const HistoryWeeklyCard = ({ weekId, weekData }) => {
                 
                 {/* 2. Effectieve Leveringen */}
                 <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--accent-success)', marginBottom: '1rem' }}>
-                        🚚 Leveringen
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--accent-success)', margin: 0 }}>
+                            🚚 Leveringen
+                        </h4>
+                        <button 
+                            onClick={() => onOpenModal('delivery')} 
+                            style={{ background: 'var(--success-color)', padding: '4px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                        >
+                            Bevestig Levering
+                        </button>
+                    </div>
                     <div className="table-container">
                         <table>
                             <thead>

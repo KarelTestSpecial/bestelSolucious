@@ -78,7 +78,7 @@ EditableCell.propTypes = {
     precision: PropTypes.number,
 };
 
-export const WeeklyCard = ({ data, onOpenModal }) => {
+export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
     const { activeData, updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
     const { getProductList } = useProductList();
     
@@ -288,13 +288,15 @@ export const WeeklyCard = ({ data, onOpenModal }) => {
                             🚚 Leveringen (€{stats.deliveryTotal.toFixed(2)})
                         </h4>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                                onClick={() => onOpenModal('delivery')} 
-                                style={{ background: 'var(--success-color)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
-                            >
-                                Bevestig Levering
-                            </button>
-                            <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--success-color)', padding: '2px 8px', fontSize: '0.9rem', cursor: 'pointer' }}>+</button>
+                            {isFirst && (
+                                <button 
+                                    onClick={() => onOpenModal('delivery')} 
+                                    style={{ background: 'var(--success-color)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
+                                >
+                                    Bevestig Levering
+                                </button>
+                            )}
+                            <button onClick={() => setNewDelivery({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--success-color)', color: 'var(--accent-success)', padding: '2px 8px', fontSize: '0.9rem', cursor: 'pointer' }}>+</button>
                         </div>
                     </div>
                     <table className="formal-table" style={{ marginTop: 0 }}>

@@ -28,11 +28,12 @@ const Dashboard = () => {
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
             <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {timeline.map((item) => (
+                {timeline.map((item, index) => (
                     <WeeklyCard 
                         key={item.weekId} 
                         data={item} 
                         onOpenModal={setActiveModal}
+                        isFirst={index === 0}
                     />
                 ))}
             </div>

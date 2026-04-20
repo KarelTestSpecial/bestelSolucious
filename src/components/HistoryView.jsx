@@ -3,11 +3,13 @@ import { useAppContext } from '../context/AppContext';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { getWeekIdsInRange } from '../utils/weekUtils';
 import HistoryWeeklyCard from './HistoryWeeklyCard';
+import DeliveryForm from './DeliveryForm';
 
 const HistoryView = () => {
     const { activeData } = useAppContext();
     const { getStatsForWeek } = useWeeklyStats();
     const [currentPage, setCurrentPage] = useState(1);
+    const [activeModal, setActiveModal] = useState(null);
     const itemsPerPage = 10;
 
     const today = new Date();
@@ -106,6 +108,9 @@ const HistoryView = () => {
                     </div>
                 </div>
             </header>
+            
+            {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
+
             <div className="history-content">
                 {
                     paginatedWeeks.length > 0 ? (
@@ -123,7 +128,12 @@ const HistoryView = () => {
                                     grandTotal: stats.totalConsumptionCost
                                 }
                             };
-                            return <HistoryWeeklyCard key={weekId} weekId={weekId} weekData={weekData} />;
+                            return <HistoryWeeklyCard 
+                                key={weekId} 
+                                weekId={weekId} 
+                                weekData={weekData} 
+                                onOpenModal={setActiveModal}
+                            />;
                         })
                     ) : (
                         <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
