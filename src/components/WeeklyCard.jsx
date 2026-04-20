@@ -162,12 +162,6 @@ export const WeeklyCard = ({ data, onOpenModal }) => {
                             🛒 Bestellingen (€{stats.orderTotal.toFixed(2)})
                         </h4>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                                onClick={() => onOpenModal('order')} 
-                                style={{ background: 'var(--accent-primary)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
-                            >
-                                Nieuwe Bestelling
-                            </button>
                             <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '2px 8px', fontSize: '0.9rem', cursor: 'pointer' }}>+</button>
                         </div>
                     </div>
@@ -487,13 +481,6 @@ export const WeeklyCard = ({ data, onOpenModal }) => {
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)', margin: 0, fontSize: '0.9rem' }}>
                             📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                         </h4>
-                        <button 
-                            onClick={() => onOpenModal('consumption')} 
-                            className="secondary"
-                            style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
-                        >
-                            + Ad-hoc
-                        </button>
                     </div>
                     <table className="formal-table" style={{ marginTop: 0 }}>
                         <thead>
