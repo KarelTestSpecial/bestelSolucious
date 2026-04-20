@@ -10,6 +10,13 @@ const HistoryView = () => {
     const { getStatsForWeek } = useWeeklyStats();
     const [currentPage, setCurrentPage] = useState(1);
     const [activeModal, setActiveModal] = useState(null);
+    const [modalWeekId, setModalWeekId] = useState(null);
+
+    const handleOpenModal = (type, weekId = null) => {
+        setActiveModal(type);
+        setModalWeekId(weekId);
+    };
+
     const itemsPerPage = 10;
 
     const today = new Date();
@@ -109,7 +116,12 @@ const HistoryView = () => {
                 </div>
             </header>
             
-            {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
+            {activeModal === 'delivery' && (
+                <DeliveryForm 
+                    onClose={() => setActiveModal(null)} 
+                    initialWeekId={modalWeekId}
+                />
+            )}
 
             <div className="history-content">
                 {
@@ -132,7 +144,7 @@ const HistoryView = () => {
                                 key={weekId} 
                                 weekId={weekId} 
                                 weekData={weekData} 
-                                onOpenModal={setActiveModal}
+                                onOpenModal={handleOpenModal}
                             />;
                         })
                     ) : (

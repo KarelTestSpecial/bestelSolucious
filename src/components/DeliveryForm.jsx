@@ -4,12 +4,26 @@ import { useAppContext } from '../context/AppContext';
 import { getWeekIdFromDate } from '../utils/weekUtils';
 import PropTypes from 'prop-types';
 
-const DeliveryForm = ({ onClose }) => {
+const DeliveryForm = ({ onClose, initialWeekId }) => {
   const { activeData, confirmBatchDeliveries, getCurrentWeekId } = useAppContext();
 
   const getToday = () => new Date().toISOString().split('T')[0];
-  const [date, setDate] = useState(getToday());
-  const [weekId, setWeekId] = useState(getCurrentWeekId());
+  const getDateFromWeekId = (id) => {
+    const [year, week] = id.split('-W').map(Number);
+    const simple = new Date(year, 0, 1 + (week - 1) * 7);
+    const dayOfWeek = simple.getDay();
+    const ISOweekStart = simple;
+    if (dayOfWeek <= 4)
+        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+    else
+        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+    // Tuesday is day 2
+    ISOweekStart.setDate(ISOweekStart.getDate() + 1);
+    return ISOweekStart.toISOString().split('T')[0];
+  };
+
+  const [date, setDate] = useState(initialWeekId ? getDateFromWeekId(initialWeekId) : getToday());
+  const [weekId, setWeekId] = useState(initialWeekId || getCurrentWeekId());
 
   useEffect(() => {
     if (date) {

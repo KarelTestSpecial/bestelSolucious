@@ -80,7 +80,7 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                             🚚 Leveringen
                         </h4>
                         <button 
-                            onClick={() => onOpenModal('delivery')} 
+                            onClick={() => onOpenModal('delivery', weekId)} 
                             style={{ background: 'var(--success-color)', padding: '4px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
                         >
                             Bevestig Levering

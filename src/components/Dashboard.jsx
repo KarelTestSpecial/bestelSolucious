@@ -10,6 +10,12 @@ const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
     const { undo, canUndo, isLoading } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
+    const [modalWeekId, setModalWeekId] = useState(null);
+
+    const handleOpenModal = (type, weekId = null) => {
+        setActiveModal(type);
+        setModalWeekId(weekId);
+    };
 
     const timeline = getTimeline();
 
@@ -24,7 +30,12 @@ const Dashboard = () => {
     return (
         <div className="dashboard animate-slide-up">
             {activeModal === 'order' && <OrderForm onClose={() => setActiveModal(null)} />}
-            {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
+            {activeModal === 'delivery' && (
+                <DeliveryForm 
+                    onClose={() => setActiveModal(null)} 
+                    initialWeekId={modalWeekId}
+                />
+            )}
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
             <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -32,7 +43,7 @@ const Dashboard = () => {
                     <WeeklyCard 
                         key={item.weekId} 
                         data={item} 
-                        onOpenModal={setActiveModal}
+                        onOpenModal={handleOpenModal}
                         isFirst={index === 0}
                     />
                 ))}

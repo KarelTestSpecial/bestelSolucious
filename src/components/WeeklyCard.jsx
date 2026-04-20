@@ -290,7 +290,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             {isFirst && (
                                 <button 
-                                    onClick={() => onOpenModal('delivery')} 
+                                    onClick={() => onOpenModal('delivery', weekId)} 
                                     style={{ background: 'var(--success-color)', padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
                                 >
                                     Bevestig Levering
