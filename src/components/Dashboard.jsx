@@ -8,58 +8,44 @@ import { WeeklyCard } from './WeeklyCard';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
-    const { undo, redo, canUndo, canRedo } = useAppContext();
+    const { undo, canUndo, isLoading } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
 
     const timeline = getTimeline();
 
-    return (
-        <div className="dashboard">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-               
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0)', paddingRight: '0rem', marginRight: '0rem' }}>
-                        <button 
-                            onClick={undo} 
-                            disabled={!canUndo}
-                            style={{ 
-                                background: '#6e40c9', 
-                                padding: '0.5rem', 
-                                opacity: canUndo ? 1 : 0.3, 
-                                cursor: canUndo ? 'pointer' : 'not-allowed',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Ongedaan maken"
-                        >
-                            ↩️
-                        </button>
-                        <button 
-                            onClick={redo} 
-                            disabled={!canRedo}
-                            style={{ 
-                                background: '#6e40c9', 
-                                padding: '0.5rem', 
-                                opacity: canRedo ? 1 : 0.3, 
-                                cursor: canRedo ? 'pointer' : 'not-allowed',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Opnieuw uitvoeren"
-                        >
-                            ↪️
-                        </button>
-                    </div>
+    if (isLoading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                <div className="stat-label">Laden...</div>
+            </div>
+        );
+    }
 
-                    <button onClick={() => setActiveModal('order')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    return (
+        <div className="dashboard animate-slide-up">
+            <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderRadius: '24px' }}>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                    <button 
+                        onClick={undo} 
+                        disabled={!canUndo}
+                        className="secondary"
+                        style={{ padding: '0.6rem 1rem', opacity: canUndo ? 1 : 0.5 }}
+                        title="Ongedaan maken"
+                    >
+                        ↩️ Undo
+                    </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button onClick={() => setActiveModal('order')}>
                         ➕ Nieuwe Bestelling
                     </button>
-                    <button onClick={() => setActiveModal('delivery')} className="badge-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Levering Bevestigen
+                    <button onClick={() => setActiveModal('delivery')} style={{ background: 'linear-gradient(135deg, var(--accent-secondary), #059669)' }}>
+                        🚚 Levering
                     </button>
-                    <button onClick={() => setActiveModal('consumption')} style={{ padding: '5px 17px', fontSize: '0.7rem' }}>+ Ad-hoc / Stock Toevoegen</button>
+                    <button onClick={() => setActiveModal('consumption')} className="secondary" style={{ fontSize: '0.8rem' }}>
+                        + Ad-hoc
+                    </button>
                 </div>
             </header>
 
@@ -67,14 +53,14 @@ const Dashboard = () => {
             {activeModal === 'delivery' && <DeliveryForm onClose={() => setActiveModal(null)} />}
             {activeModal === 'consumption' && <ConsumptionForm onClose={() => setActiveModal(null)} />}
 
-            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+            <div className="timeline-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {timeline.map((item) => (
                     <WeeklyCard key={item.weekId} data={item} />
                 ))}
             </div>
-
         </div>
     );
 };
 
 export default Dashboard;
+

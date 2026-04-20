@@ -6,48 +6,56 @@ const ProductList = () => {
     const products = getProductList();
 
     return (
-        <div className="product-list">
-            <h1>Producten Referentielijst</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                Overzicht van alle producten uit eerdere bestellingen en leveringen (gebaseerd op unieke namen).
-            </p>
+        <div className="product-list animate-slide-up">
+            <header style={{ marginBottom: '2rem' }}>
+                <h1>📦 Producten Referentielijst</h1>
+                <p className="stat-label">
+                    Overzicht van alle producten uit eerdere bestellingen en leveringen.
+                </p>
+            </header>
 
-            <div className="glass-panel table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product Naam</th>
-                            <th>Laatst Bekende Prijs</th>
-                            <th>Geschatte Gebruiksduur</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.length === 0 ? (
+            <div className="glass-panel">
+                <div className="table-container">
+                    <table>
+                        <thead>
                             <tr>
-                                <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Geen producten gevonden.</td>
+                                <th>Product Naam</th>
+                                <th>Laatst Bekende Prijs</th>
+                                <th>Geschatte Gebruiksduur</th>
                             </tr>
-                        ) : products.map((product, index) => (
-                            <tr key={index}>
-                                <td style={{ textTransform: 'lowercase' }}><strong>{product.name}</strong></td>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '16px' }}>🏷️</span>
-                                        €{product.price.toFixed(2)}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '16px' }}>🕒</span>
-                                        {product.estDuration} {product.estDuration === 1 ? 'week' : 'weken'}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {products.length === 0 ? (
+                                <tr>
+                                    <td colSpan="3" className="empty-text" style={{ textAlign: 'center', padding: '2rem' }}>
+                                        Geen producten gevonden.
+                                    </td>
+                                </tr>
+                            ) : products.map((product, index) => (
+                                <tr key={index}>
+                                    <td>
+                                        <div style={{ fontWeight: '600', color: '#fff' }}>{product.name}</div>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span className="badge badge-success">€{product.price.toFixed(2)}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                                            <span style={{ fontSize: '1.1rem' }}>🕒</span>
+                                            {product.estDuration} {product.estDuration === 1 ? 'week' : 'weken'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
 };
 
 export default ProductList;
+

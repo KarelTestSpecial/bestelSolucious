@@ -10,29 +10,54 @@ function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
 
     return (
-        <>
-            <nav className="glass-panel" style={{ margin: '0.1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
-                <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    📊 Dashboard
-                </button>
-                <button onClick={() => setActiveTab('inventory')} className={activeTab === 'inventory' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    📦 Productenlijst
-                </button>
-                <button onClick={() => setActiveTab('history')} className={activeTab === 'history' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    🕒 Historiek
-                </button>
-                <button onClick={() => setActiveTab('data')} className={activeTab === 'data' ? '' : 'badge-warning'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    ⚙️ Beheer
-                </button>
-            </nav>
+        <div id="root">
+            <header className="container">
+                <nav className="glass-panel">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            Bestel Tracker
+                        </span>
+                    </div>
+                    <div className="nav-links">
+                        <button 
+                            onClick={() => setActiveTab('dashboard')} 
+                            className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                        >
+                            📊 Dashboard
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('inventory')} 
+                            className={`nav-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+                        >
+                            📦 Producten
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('history')} 
+                            className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
+                        >
+                            🕒 Historiek
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('data')} 
+                            className={`nav-btn ${activeTab === 'data' ? 'active' : ''}`}
+                        >
+                            ⚙️ Beheer
+                        </button>
+                    </div>
+                </nav>
+            </header>
 
-            <main className="container animate-fade-in">
+            <main className="container animate-slide-up">
                 {activeTab === 'dashboard' && <Dashboard />}
                 {activeTab === 'inventory' && <ProductList />}
                 {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'data' && <DataManager />}
             </main>
-        </>
+
+            <footer style={{ marginTop: 'auto', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                &copy; 2026 Bestel Solucious Tracker • Premium Cloud Edition
+            </footer>
+        </div>
     );
 }
 
@@ -45,3 +70,4 @@ function App() {
 }
 
 export default App;
+

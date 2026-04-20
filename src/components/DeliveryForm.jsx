@@ -17,7 +17,6 @@ const DeliveryForm = ({ onClose }) => {
     }
   }, [date]);
 
-  // We zoeken naar openstaande bestellingen die nog niet geleverd zijn
   const pendingOrders = activeData.orders.filter(order => {
     const isDelivered = activeData.deliveries.some(d => d.orderId === order.id);
     const isInSelectedWeek = order.weekId === weekId;
@@ -38,7 +37,7 @@ const DeliveryForm = ({ onClose }) => {
           name: order.name,
           price: order.price,
           qty: order.qty,
-          estDuration: order.estDuration, // Neem over van bestelling
+          estDuration: order.estDuration,
           weekId: weekId
         },
         consumption: {
@@ -48,7 +47,7 @@ const DeliveryForm = ({ onClose }) => {
           qty: order.qty,
           cost: order.price * order.qty,
           startDate: weekId,
-          estDuration: order.estDuration, // Neem over van bestelling
+          estDuration: order.estDuration,
           effDuration: null,
           completed: false
         }
@@ -60,51 +59,53 @@ const DeliveryForm = ({ onClose }) => {
   };
 
   return createPortal(
-    <div className="modal-overlay" style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
-      backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-    }}>
-      <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', position: 'sticky', top: 0, background: 'rgba(30, 30, 45, 0.8)', padding: '0.5rem 0', zIndex: 10 }}>
-          <h2>Levering Bevestigen</h2>
-          <button onClick={onClose} style={{ background: 'transparent', padding: '0.5rem' }}><span style={{ fontSize: '20px' }}>❌</span></button>
-        </div>
+    <div className="modal-overlay">
+      <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '650px', maxHeight: '90vh', padding: '2.5rem', overflowY: 'auto' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: '700' }}>🚚 Levering Bevestigen</h2>
+          <button onClick={onClose} className="secondary" style={{ padding: '0.5rem', borderRadius: '50%', width: '40px', height: '40px' }}>✕</button>
+        </header>
 
         {pendingOrders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <span style={{ fontSize: '48px', display: 'block', marginBottom: '1rem' }}>⚠️</span>
-            <p>Geen openstaande bestellingen gevonden.</p>
+          <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+            <span style={{ fontSize: '4rem', display: 'block', marginBottom: '1.5rem' }}>📦</span>
+            <p className="stat-label">Geen openstaande bestellingen gevonden voor deze week.</p>
+            <button onClick={onClose} className="secondary" style={{ marginTop: '2rem' }}>Sluiten</button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <p style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <p className="stat-label">
                 De volgende <strong>{pendingOrders.length}</strong> artikelen worden bevestigd als geleverd:
             </p>
 
-            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.5rem' }}>
-                <table style={{ width: '100%', fontSize: '0.9rem' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Product</th>
-                            <th style={{ textAlign: 'right', padding: '0.5rem' }}>Aantal</th>
-                            <th style={{ textAlign: 'right', padding: '0.5rem' }}>Prijs p/u</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {pendingOrders.map(o => (
-                            <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                <td style={{ padding: '0.5rem' }}>{o.name}</td>
-                                <td style={{ textAlign: 'right', padding: '0.5rem' }}>{o.qty}</td>
-                                <td style={{ textAlign: 'right', padding: '0.5rem' }}>€ {o.price.toFixed(2)}</td>
+            <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '0', overflow: 'hidden' }}>
+                <div className="table-container" style={{ maxHeight: '300px' }}>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th style={{ textAlign: 'center' }}>Aantal</th>
+                                <th style={{ textAlign: 'right' }}>Prijs</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {pendingOrders.map(o => (
+                                <tr key={o.id}>
+                                    <td style={{ fontWeight: '600' }}>{o.name}</td>
+                                    <td style={{ textAlign: 'center' }}>{o.qty}</td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <span className="badge badge-success">€{o.price.toFixed(2)}</span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-                <label>Effectieve Leverdatum</label>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div className="card-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: 0 }}>
+                <div>
+                    <label className="stat-label" style={{ marginBottom: '0.8rem', display: 'block' }}>Leverdatum</label>
                     <input
                         className="input-field"
                         type="date"
@@ -113,23 +114,24 @@ const DeliveryForm = ({ onClose }) => {
                         onFocus={(e) => e.target.showPicker?.()}
                         onClick={(e) => e.target.showPicker?.()}
                         required
-                        style={{ marginBottom: 0, flex: 1 }}
                     />
-                    <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.8rem' }}>
+                    <span className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.8rem 1.2rem' }}>
                         Week: {weekId}
                     </span>
                 </div>
             </div>
 
-            <div className="alert-info" style={{ marginBottom: '1.5rem', background: 'rgba(52, 152, 219, 0.1)', padding: '1rem', borderRadius: '8px', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '24px' }}>✅</span>
-                <p style={{ fontSize: '0.85rem', margin: 0 }}>
-                    De verwachte verbruiksduur is overgenomen van de bestelling. Individuele aanpassingen kunnen na bevestiging in het dashboard gedaan worden.
+            <div className="glass-panel" style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1.5rem', borderRadius: '16px', display: 'flex', gap: '1.2rem', alignItems: 'center', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <span style={{ fontSize: '1.8rem' }}>ℹ️</span>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
+                    Verbruik wordt automatisch gestart vanaf de leverdatum. Je kunt de duur later aanpassen in het dashboard.
                 </p>
             </div>
 
-            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
-                Bevestig Alle {pendingOrders.length} Artikelen
+            <button type="submit" style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}>
+                ✅ Bevestig Alle Artikelen
             </button>
           </form>
         )}
@@ -138,6 +140,7 @@ const DeliveryForm = ({ onClose }) => {
     document.body
   );
 };
+
 
 DeliveryForm.propTypes = {
     onClose: PropTypes.func.isRequired,

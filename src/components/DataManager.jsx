@@ -6,7 +6,6 @@ const DataManager = () => {
     const { exportData, importData, activeData, addBatchOrders, clearDatabase } = useAppContext();
     const [batchText, setBatchText] = useState('');
     
-    // Standaard datum: vandaag
     const getToday = () => new Date().toISOString().split('T')[0];
     const [targetDate, setTargetDate] = useState(getToday());
     const [targetWeek, setTargetWeek] = useState(getWeekIdFromDate(getToday()));
@@ -30,12 +29,10 @@ const DataManager = () => {
             lines.forEach(line => {
                 if (!line.trim()) return;
                 
-                // Probeer puntkomma of tab als separator
                 let parts = line.split(';');
-                if (parts.length < 2) parts = line.split('\t'); // Fallback naar TSV (excel copy-paste)
-                if (parts.length < 2) parts = line.split(','); // Fallback naar CSV
+                if (parts.length < 2) parts = line.split('\t');
+                if (parts.length < 2) parts = line.split(',');
 
-                // Verwacht formaat: Naam ; Aantal ; Prijs (optioneel)
                 const name = parts[0]?.trim();
                 if (!name) return;
 
@@ -50,7 +47,6 @@ const DataManager = () => {
                         name,
                         qty,
                         price: isNaN(price) ? 0 : price,
-                        productId: crypto.randomUUID() // Genereer een ID voor de backend om te gebruiken
                     });
                 }
             });
@@ -82,8 +78,6 @@ const DataManager = () => {
         const reader = new FileReader();
         reader.onload = (e) => setBatchText(e.target.result);
         reader.readAsText(file);
-        
-        // Reset input value om opnieuw laden van hetzelfde bestand mogelijk te maken
         e.target.value = null;
     };
 
@@ -95,9 +89,9 @@ const DataManager = () => {
         reader.onload = async (e) => {
             try {
                 const jsonData = JSON.parse(e.target.result);
-                if (confirm("Wil je deze backup samenvoegen met je huidige data?\n\n- Bestaande items worden bijgewerkt.\n- Nieuwe items worden toegevoegd.\n- Items die niet in de backup staan, blijven behouden.")) {
+                if (confirm("Wil je deze backup herstellen?\n\n- Bestaande data wordt gewist.\n- Backup data wordt ingeladen.")) {
                     const success = await importData(jsonData);
-                    if (success) alert("Data succesvol samengevoegd!");
+                    if (success) alert("Data succesvol hersteld!");
                 }
             } catch (err) {
                 alert("Ongeldig JSON bestand: " + err.message);
@@ -115,26 +109,26 @@ const DataManager = () => {
     };
 
     return (
-        <div className="data-manager">
-            <h1>Data Beheer</h1>
+        <div className="data-manager animate-slide-up">
+            <header style={{ marginBottom: '2rem' }}>
+                <h1>⚙️ Data Beheer</h1>
+                <p className="stat-label">Beheer je gegevens, importeer bestellingen en maak backups.</p>
+            </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+            <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
                 
-                {/* 1. BULK IMPORT SECTIE (GROOT) */}
                 <section className="glass-panel" style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)' }}>
-                            <span style={{ fontSize: '24px' }}>📄</span> Batch Import Bestellingen
-                        </h2>
-                        <p style={{ color: 'var(--text-muted)' }}>
-                            Kopieer gegevens uit Excel of upload een CSV-bestand om snel meerdere bestellingen toe te voegen.
-                        </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h2>📄 Batch Import Bestellingen</h2>
+                        <span className="badge badge-warning">Week {targetWeek}</span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2.5rem' }}>
                         <div>
-                            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>1. Voor welke leverdatum?</label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.8rem', color: 'var(--text-muted)' }}>
+                                    1. Selecteer Leverdatum
+                                </label>
                                 <input 
                                     type="date" 
                                     className="input-field" 
@@ -142,103 +136,103 @@ const DataManager = () => {
                                     onChange={(e) => setTargetDate(e.target.value)}
                                     onFocus={(e) => e.target.showPicker?.()}
                                     onClick={(e) => e.target.showPicker?.()}
-                                    style={{ maxWidth: '200px', marginBottom: 0 }}
                                 />
-                                <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>
-                                    Week {targetWeek}
-                                </span>
                             </div>
                             
-                            <div className="detail-section" style={{ marginTop: '1rem' }}>
-                                <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{ fontSize: '14px' }}>ℹ️</span> Instructies</h4>
-                                <ul style={{ fontSize: '0.9rem', paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
-                                    <li>Zorg dat elke regel 1 product is.</li>
-                                    <li>Gebruik puntkomma (;), tab of komma als scheidingsteken.</li>
-                                    <li>Kolom volgorde: <strong>Naam</strong> ; <strong>Aantal</strong> ; <strong>Prijs (optioneel)</strong></li>
-                                    <li>Prijs en aantal mogen komma&apos;s gebruiken voor decimalen.</li>
+                            <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '1.2rem', borderRadius: '16px' }}>
+                                <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    💡 Instructies
+                                </h4>
+                                <ul style={{ fontSize: '0.9rem', paddingLeft: '1.2rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <li>Kopieer direct vanuit Excel/Google Sheets.</li>
+                                    <li>Kolommen: <strong>Naam</strong> | <strong>Aantal</strong> | <strong>Prijs</strong></li>
+                                    <li>Gebruik puntkomma (;) of tab als scheidingsteken.</li>
                                 </ul>
-                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px', marginTop: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                                    Voorbeeld:<br/>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '8px', marginTop: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     Halfvolle Melk; 6; 0,95<br/>
-                                    Brood Bruin; 2; 2,20<br/>
-                                    Koffie; 1
+                                    Brood Bruin; 2; 2,20
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>2. Plak data of upload bestand</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontWeight: '600', display: 'block', marginBottom: '0.8rem', color: 'var(--text-muted)' }}>
+                                2. Plak data of upload TSV/CSV
+                            </label>
                             <textarea
                                 className="input-field"
-                                style={{ flex: 1, minHeight: '200px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                                style={{ flex: 1, minHeight: '250px', fontFamily: 'monospace', fontSize: '0.9rem', marginBottom: '1.5rem' }}
                                 value={batchText}
                                 onChange={(e) => setBatchText(e.target.value)}
-                                placeholder="Plak hier je Excel data..."
+                                placeholder="Plak hier je data..."
                             />
                             
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ position: 'relative', flex: 1 }}>
                                     <input
                                         type="file"
                                         accept=".csv,.txt,.tsv"
                                         onChange={handleFileUpload}
-                                        style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer' }}
+                                        style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 2 }}
                                     />
-                                    <button className="badge-warning" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '16px' }}>📄</span> Kies Bestand
+                                    <button className="secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                                        📂 Bestand
                                     </button>
                                 </div>
                                 <button 
                                     onClick={handleBatchImport} 
                                     disabled={!batchText.trim() || isProcessing}
-                                    style={{ flex: 2, opacity: (!batchText.trim() || isProcessing) ? 0.5 : 1 }}
+                                    style={{ flex: 2, justifyContent: 'center' }}
                                 >
-                                    {isProcessing ? 'Bezig...' : 'Importeer Bestellingen'}
+                                    {isProcessing ? 'Verwerken...' : '🚀 Importeer Alles'}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* 2. OVERIGE FUNCTIES (KLEINER) */}
                 <section className="glass-panel">
-                    <h3><span style={{ fontSize: '18px' }}>🗄️</span> Statistieken</h3>
-                    <div style={{ marginTop: '1rem' }}>
-                        <p>Actieve Bestellingen: {activeData.orders.length}</p>
-                        <p>Actieve Leveringen: {activeData.deliveries.length}</p>
-                        <p>Items in Verbruik: {activeData.consumption.length}</p>
+                    <h3 style={{ marginBottom: '1.5rem' }}>📊 Systeem Status</h3>
+                    <div className="card-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: 0 }}>
+                        <div className="stat-card glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>
+                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>{activeData.orders.length}</div>
+                            <div className="stat-label">Bestellingen</div>
+                        </div>
+                        <div className="stat-card glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>
+                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>{activeData.deliveries.length}</div>
+                            <div className="stat-label">Leveringen</div>
+                        </div>
                     </div>
                 </section>
 
                 <section className="glass-panel">
-                    <h3><span style={{ fontSize: '18px' }}>📥</span> Backup / Restore</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                        Backup downloaden of een eerdere backup herstellen.
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <button onClick={exportData} style={{ width: '100%' }}>
-                            Exporteer JSON
+                    <h3 style={{ marginBottom: '1.5rem' }}>📥 Backup & Herstel</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <button onClick={exportData} style={{ width: '100%', justifyContent: 'center' }}>
+                            📥 Download Backup (JSON)
                         </button>
                         <div style={{ position: 'relative' }}>
                             <input
                                 type="file"
                                 accept=".json"
                                 onChange={handleJSONUpload}
-                                style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', width: '100%' }}
+                                style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', width: '100%', zIndex: 2 }}
                             />
-                            <button className="badge-success" style={{ width: '100%' }}>
-                                Herstel JSON (Restore)
+                            <button className="secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                                📤 Herstel Backup
                             </button>
                         </div>
                     </div>
                 </section>
 
-                <section className="glass-panel" style={{ border: '1px solid var(--danger-color)' }}>
-                    <h3><span style={{ fontSize: '18px' }}>🗑️</span> Reset</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '1rem 0' }}>
-                        Wis alle data in de database permanent.
+                <section className="glass-panel" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    <h3 style={{ color: 'var(--danger-color)', marginBottom: '1.5rem' }}>⚠️ Gevaarlijke Zone</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                        Dit wist alle data permanent uit je cloud-database.
                     </p>
-                    <button onClick={clearData} className="badge-danger" style={{ width: '100%' }}>Wis alle data</button>
+                    <button onClick={clearData} style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', width: '100%', justifyContent: 'center' }}>
+                        🗑️ Reset Database
+                    </button>
                 </section>
             </div>
         </div>
@@ -246,3 +240,4 @@ const DataManager = () => {
 };
 
 export default DataManager;
+

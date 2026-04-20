@@ -127,33 +127,42 @@ export const WeeklyCard = ({ data }) => {
     const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
 
     return (
-        <div data-debug-version="2" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ padding: '0.5rem', borderLeft: isCurrent ? '4px solid var(--accent-color)' : 'none', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.2rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
-                    Levering: {getDateOfTuesday(weekId)} &nbsp; <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>({weekId})</span>
-                    {isCurrent && <span className="badge badge-success" style={{ marginLeft: '1rem' }}>HUIDIGE WEEK</span>}
-                </h3>
-                <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                        Totaal Besteld: <span style={{ color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</span>
+        <div data-debug-version="2" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ borderLeft: isCurrent ? '6px solid var(--accent-primary)' : '1px solid var(--border-color)', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>
+                        📅 {getDateOfTuesday(weekId)}
+                    </h3>
+                    <span className="badge badge-warning" style={{ opacity: 0.8 }}>{weekId}</span>
+                    {isCurrent && <span className="badge badge-success">LIVE</span>}
+                </div>
+                
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                    <div className="stat-card" style={{ padding: '0 1rem' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--warning-color)' }}>€{stats.orderTotal.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Besteld</div>
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                        Totaal Geleverd: <span style={{ color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</span>
+                    <div className="stat-card" style={{ padding: '0 1rem', borderLeft: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--success-color)' }}>€{stats.deliveryTotal.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Geleverd</div>
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                        Totaal Verbruik: <span style={{ color: 'var(--accent-color)' }}>€{stats.totalConsumptionCost.toFixed(2)}</span>
+                    <div className="stat-card" style={{ padding: '0 1rem', borderLeft: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--accent-primary)' }}>€{stats.totalConsumptionCost.toFixed(2)}</div>
+                        <div className="stat-label" style={{ fontSize: '0.7rem' }}>Verbruik</div>
                     </div>
-                      <button
+                    <button
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        style={{ background: 'transparent', color: 'var(--text-muted)', padding: '4px', border: 'none', cursor: 'pointer' }}
+                        className="secondary"
+                        style={{ padding: '0.4rem 0.8rem', borderRadius: '50%' }}
                         title="Scroll naar boven"
-                      >
+                    >
                         ⬆️
                     </button>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', flexWrap: 'wrap' }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))', gap: '2.5rem' }}>
                 {/* 1. Bestellingen */}
                 <section style={{ flex: 1, minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0rem' }}>
