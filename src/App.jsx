@@ -13,16 +13,16 @@ function AppContent() {
     return (
         <div id="root">
             <header className="container" style={{ paddingBottom: 0 }}>
-                <nav className="glass-panel" style={{ margin: 0, borderRadius: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <span style={{ fontSize: '1.5rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <nav className="glass-panel" style={{ margin: '0.2rem 0', borderRadius: '10px', padding: '0.2rem 0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                             Bestel Tracker
                         </span>
                         <button 
                             onClick={undo} 
                             disabled={!canUndo}
                             className="secondary"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', opacity: canUndo ? 1 : 0.3, borderRadius: '10px' }}
+                            style={{ padding: '2px 8px', fontSize: '0.7rem', opacity: canUndo ? 1 : 0.3, borderRadius: '6px' }}
                             title="Ongedaan maken"
                         >
                             ↩️ Undo
