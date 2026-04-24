@@ -16,7 +16,7 @@ function AppContent() {
                 <nav className="glass-panel" style={{ margin: '0.2rem 0', borderRadius: '10px', padding: '0.2rem 0.6rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <span style={{ fontSize: '1.1rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                            Bestel Tracker
+                            Bestel Solucious
                         </span>
                         <button 
                             onClick={undo} 
@@ -65,7 +65,7 @@ function AppContent() {
             </main>
 
             <footer style={{ marginTop: 'auto', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                &copy; 2026 Bestel Solucious Tracker • Premium Cloud Edition
+                &copy; 2026 Bestel Solucious • Premium Cloud Edition
             </footer>
         </div>
     );

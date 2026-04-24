@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Bestel Tracker
-Comment=Start de Bestel Tracker
+Name=Bestel Solucious
+Comment=Start de Bestel Solucious
 # We roepen het script direct aan, de Terminal=true zorgt voor het venster
 Exec=/bin/bash -l -c "/home/kareltestspecial/dev/bestelSolucious/bestel/bestel.sh"
 Icon=/home/kareltestspecial/dev/bestelSolucious/bestel/bestel.svg

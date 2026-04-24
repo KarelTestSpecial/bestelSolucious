@@ -33,7 +33,7 @@ const Login = () => {
             <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '3rem' }}>
                 <header style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>{isRegister ? '📝' : '🔐'}</div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>{isRegister ? 'Account Aanmaken' : 'Bestel Tracker'}</h1>
+                    <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>{isRegister ? 'Account Aanmaken' : 'Bestel Solucious'}</h1>
                     <p className="stat-label">{isRegister ? 'Maak een nieuw account aan' : 'Log in om door te gaan'}</p>
                 </header>
 

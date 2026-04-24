@@ -1,8 +1,8 @@
 `README.md`
 
-# Bestel & Voorraad Tracker
+# Bestel Solucious
 
-Welkom bij de Bestel & Voorraad Tracker! Deze applicatie is ontworpen om u te helpen bij het eenvoudig beheren van bestellingen, leveringen, verbruik en voorraad van voedingsartikelen.
+Welkom bij Bestel Solucious! Deze applicatie is ontworpen om u te helpen bij het eenvoudig beheren van bestellingen, leveringen, verbruik en voorraad van voedingsartikelen.
 
 ## Inhoudsopgave
 1.  [Installatie](#installatie)
@@ -41,7 +41,7 @@ Voer deze commando's eenmalig uit in de terminal:
 U heeft twee opties:
 
 **Optie A: Via het automatische script (Aanbevolen)**
-Dubbelklik op het icoon `Bestel Tracker` in uw applicatielijst, of voer uit in de terminal:
+Dubbelklik op het icoon `Bestel Solucious` in uw applicatielijst, of voer uit in de terminal:
 ```bash
 ./bestel.sh
 ```
