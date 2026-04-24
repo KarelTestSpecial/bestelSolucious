@@ -98,7 +98,34 @@ export const useWeeklyStats = () => {
             })
             .filter(Boolean);
 
-        const consumptionInWeek = [...consumptionFromDeliveries, ...consumptionFromOrders];
+        const consumptionFromDepartment = activeData.consumption
+            .filter(c => c.sourceType === 'department')
+            .map(c => {
+                const startAbs = getAbsoluteWeek(c.startDate);
+                const duration = c.effDuration || c.estDuration || 1;
+                const endAbs = startAbs + duration - 1;
+
+                if (targetAbs < startAbs || targetAbs > endAbs) return null;
+
+                const weeksSincePurchase = targetAbs - startAbs + 1;
+                const weeklyCost = (c.cost || 0) / duration;
+
+                return {
+                    ...c,
+                    displayName: c.name,
+                    weeklyCost: weeklyCost,
+                    weeksSincePurchase: weeksSincePurchase,
+                    duration: duration,
+                    isDepartmentStock: true
+                };
+            })
+            .filter(Boolean);
+
+        const consumptionInWeek = [
+            ...consumptionFromDeliveries, 
+            ...consumptionFromOrders,
+            ...consumptionFromDepartment
+        ];
 
         const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + c.weeklyCost, 0);
 

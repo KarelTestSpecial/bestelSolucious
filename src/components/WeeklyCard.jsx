@@ -47,7 +47,7 @@ EditableCell.propTypes = {
 };
 
 export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
-    const { activeData, updateItem, deleteItem, addOrder, confirmDelivery } = useAppContext();
+    const { activeData, updateItem, deleteItem, addOrder, confirmDelivery, registerConsumption } = useAppContext();
     const { getProductList } = useProductList();
     
     // Gebruik de volledige data om de productlijst te genereren
@@ -58,6 +58,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
     
     const [newOrder, setNewOrder] = useState(null);
     const [newDelivery, setNewDelivery] = useState(null);
+    const [newDeptItem, setNewDeptItem] = useState(null);
 
     // Auto-fill handlers voor nieuwe bestellingen/leveringen
     const handleOrderNameChange = (e) => {
@@ -88,11 +89,27 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
         });
     };
 
-    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => c.weeksSincePurchase <= 1);
-    const consumptionFromStock = stats.consumptionInWeek.filter(c => c.weeksSincePurchase > 1);
+    const handleDeptNameChange = (e) => {
+        const name = e.target.value;
+        setNewDeptItem(prev => {
+            const newData = { ...prev, name };
+            const match = products.find(p => p.name.toLowerCase().trim() === name.toLowerCase().trim());
+            if (match) {
+                newData.cost = match.price.toString();
+                newData.estDuration = parseInt(match.estDuration || 1);
+            }
+            return newData;
+        });
+    };
+
+    const consumptionFromDelivery = stats.consumptionInWeek.filter(c => !c.isDepartmentStock && c.weeksSincePurchase <= 1);
+    const personalStock = stats.consumptionInWeek.filter(c => !c.isDepartmentStock && c.weeksSincePurchase > 1);
+    const departmentStock = stats.consumptionInWeek.filter(c => c.isDepartmentStock);
 
     const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + c.weeklyCost, 0);
-    const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + c.weeklyCost, 0);
+    const personalStockTotal = personalStock.reduce((acc, c) => acc + c.weeklyCost, 0);
+    const departmentStockTotal = departmentStock.reduce((acc, c) => acc + c.weeklyCost, 0);
+    const stockConsumptionTotal = personalStockTotal + departmentStockTotal;
 
     return (
         <div data-debug-version="4" className={`glass-panel ${isCurrent ? 'current-week' : ''}`} style={{ borderLeft: isCurrent ? '4px solid var(--accent-primary)' : '1px solid var(--border-color)', marginBottom: '0.6rem', padding: '0.6rem' }}>
@@ -274,6 +291,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-color)', margin: 0, fontSize: '0.8rem' }}>
                             📈 Verbruik Stock (€{stockConsumptionTotal.toFixed(2)})
                         </h4>
+                        <button onClick={() => setNewDeptItem({ name: '', cost: '', estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '1px 6px', fontSize: '0.8rem', cursor: 'pointer' }}>+</button>
                     </div>
                     <table className="formal-table">
                         <thead>
@@ -285,7 +303,8 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {consumptionFromStock.length > 0 ? consumptionFromStock.map(c => (
+                            {/* Persoonlijke Stock */}
+                            {personalStock.length > 0 ? personalStock.map(c => (
                                 <tr key={c.id}>
                                     <td style={{ fontWeight: '500' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
@@ -294,7 +313,95 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     </td>
                                     <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--accent-secondary)' }}>€{c.weeklyCost.toFixed(2)}</td>
                                 </tr>
-                            )) : <tr><td colSpan="4" className="empty-text">Geen verbruik uit stock</td></tr>}
+                            )) : personalStock.length === 0 && departmentStock.length === 0 && !newDeptItem && <tr><td colSpan="4" className="empty-text">Geen verbruik uit stock</td></tr>}
+
+                            {/* Afdeling Stock Items */}
+                            {departmentStock.map(c => (
+                                <tr key={c.id} style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
+                                    <td style={{ fontWeight: '500', fontStyle: 'italic', color: '#93c5fd' }}>
+                                        <EditableCell value={c.displayName} onSave={(val) => updateItem('consumption', c.id, { name: val })} />
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <EditableCell value={c.cost} type="number" onSave={(val) => updateItem('consumption', c.id, { cost: val })} />
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            {c.weeksSincePurchase} / 
+                                            <EditableCell value={c.duration} type="number" onSave={(val) => updateItem('consumption', c.id, { estDuration: val })} precision={0} />
+                                            w
+                                        </div>
+                                    </td>
+                                    <td style={{ textAlign: 'center', fontWeight: '600', color: '#93c5fd' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            €{c.weeklyCost.toFixed(2)}
+                                            <button onClick={() => deleteItem('consumption', c.id)} style={{ background: 'transparent', color: 'var(--accent-danger)', padding: 0, fontSize: '0.7rem' }}>✕</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {/* Nieuw Afdeling Item Form */}
+                            {newDeptItem && (
+                                <tr style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                                    <td>
+                                        <input 
+                                            list="product-suggestions-dept"
+                                            className="input-field" 
+                                            value={newDeptItem.name} 
+                                            onChange={handleDeptNameChange} 
+                                            autoFocus 
+                                            placeholder="Product..." 
+                                            style={{ fontSize: '0.75rem' }}
+                                        />
+                                        <datalist id="product-suggestions-dept">
+                                            {products.map(p => <option key={p.id} value={p.name} />)}
+                                        </datalist>
+                                    </td>
+                                    <td>
+                                        <input 
+                                            className="input-field text-center" 
+                                            type="number" 
+                                            step="0.01"
+                                            value={newDeptItem.cost} 
+                                            onChange={e => setNewDeptItem({...newDeptItem, cost: e.target.value})} 
+                                            placeholder="€"
+                                            style={{ fontSize: '0.75rem' }}
+                                        />
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <input 
+                                                className="input-field text-center" 
+                                                type="number" 
+                                                value={newDeptItem.estDuration} 
+                                                onChange={e => setNewDeptItem({...newDeptItem, estDuration: parseInt(e.target.value)})} 
+                                                style={{ width: '40px', fontSize: '0.75rem' }}
+                                            />
+                                            <span style={{ fontSize: '0.7rem' }}>w</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button 
+                                            onClick={() => { 
+                                                registerConsumption({ 
+                                                    name: newDeptItem.name, 
+                                                    sourceId: 'department', 
+                                                    sourceType: 'department', 
+                                                    qty: 1, 
+                                                    cost: parseFloat(newDeptItem.cost) || 0, 
+                                                    startDate: weekId, 
+                                                    estDuration: newDeptItem.estDuration, 
+                                                    completed: false 
+                                                }); 
+                                                setNewDeptItem(null); 
+                                            }}
+                                            style={{ padding: '2px 8px', fontSize: '0.75rem' }}
+                                        >
+                                            OK
+                                        </button>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </section>

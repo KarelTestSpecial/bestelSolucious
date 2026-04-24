@@ -30,16 +30,16 @@ export const AppProvider = ({ children }) => {
         setRedoStack([]);
     };
 
-    const fetchData = async (userId) => {
+    const fetchData = async (userId, silent = false) => {
         if (!userId) return;
         try {
-            setIsLoading(true);
+            if (!silent) setIsLoading(true);
             const data = await dbLogic.getFullData(userId);
             setActiveData(data);
         } catch (error) {
             console.error("Failed to fetch initial data", error);
         } finally {
-            setIsLoading(false);
+            if (!silent) setIsLoading(false);
         }
     };
 
@@ -82,14 +82,14 @@ export const AppProvider = ({ children }) => {
         if (!user) return;
         pushToUndoStack();
         await dbLogic.addOrder(user.uid, order);
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const confirmDelivery = async (delivery) => {
         if (!user) return;
         pushToUndoStack();
         await dbLogic.addDelivery(user.uid, delivery);
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const confirmBatchDeliveries = async (deliveries) => {
@@ -101,14 +101,14 @@ export const AppProvider = ({ children }) => {
                 await dbLogic.addConsumption(user.uid, consumption);
             }
         }
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const registerConsumption = async (consumptionItem) => {
         if (!user) return;
         pushToUndoStack();
         await dbLogic.addConsumption(user.uid, consumptionItem);
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const addAdhocDelivery = async (delivery, consumption) => {
@@ -117,7 +117,7 @@ export const AppProvider = ({ children }) => {
         if (consumption) {
             await dbLogic.addConsumption(user.uid, consumption);
         }
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const updateItem = async (type, id, updates) => {
@@ -157,10 +157,10 @@ export const AppProvider = ({ children }) => {
         pushToUndoStack();
         try {
             await dbLogic.updateItem(user.uid, type, id, updates);
-            fetchData(user.uid);
+            fetchData(user.uid, true);
         } catch (error) {
             console.error(`Error updating ${type}:`, error);
-            fetchData(user.uid);
+            fetchData(user.uid, true);
         }
     };
 
@@ -168,7 +168,7 @@ export const AppProvider = ({ children }) => {
         if (!user) return;
         pushToUndoStack();
         await dbLogic.deleteItem(user.uid, type, id);
-        fetchData(user.uid);
+        fetchData(user.uid, true);
     };
 
     const addBatchOrders = async (weekId, orders) => {
@@ -176,7 +176,7 @@ export const AppProvider = ({ children }) => {
         try {
             pushToUndoStack();
             await dbLogic.addBatchOrders(user.uid, weekId, orders);
-            fetchData(user.uid);
+            fetchData(user.uid, true);
         } catch (error) {
             console.error("Batch import failed", error);
             throw error;
