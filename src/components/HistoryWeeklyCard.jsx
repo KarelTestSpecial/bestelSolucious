@@ -11,8 +11,8 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
     const consumptionFromDelivery = verbruik.filter(c => c.weeksSincePurchase <= 1);
     const consumptionFromStock = verbruik.filter(c => c.weeksSincePurchase > 1);
 
-    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + (c.weeklyCost || 0), 0);
-    const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + (c.weeklyCost || 0), 0);
+    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
+    const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
 
     return (
         <div className="glass-panel" style={{ marginBottom: '0.6rem', padding: '0.6rem' }}>
@@ -49,9 +49,9 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Naam</th>
-                                <th style={{ textAlign: 'center' }}>Q</th>
-                                <th style={{ textAlign: 'right' }}>Sub</th>
+                                <th style={{ width: '60%' }}>Naam</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Q</th>
+                                <th style={{ width: '25%', textAlign: 'right' }}>Sub</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,9 +82,9 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Naam</th>
-                                <th style={{ textAlign: 'center' }}>Q</th>
-                                <th style={{ textAlign: 'right' }}>Sub</th>
+                                <th style={{ width: '60%' }}>Naam</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Q</th>
+                                <th style={{ width: '25%', textAlign: 'right' }}>Sub</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,10 +107,10 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th style={{ textAlign: 'center' }}>Status</th>
-                                <th style={{ textAlign: 'right' }}>Aankoop</th>
-                                <th style={{ textAlign: 'right' }}>Kost</th>
+                                <th style={{ width: '40%' }}>Product</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Status</th>
+                                <th style={{ width: '20%', textAlign: 'right' }}>Aankoop</th>
+                                <th style={{ width: '20%', textAlign: 'right' }}>Kost</th>
                             </tr>
                         </thead>
                         <tbody>

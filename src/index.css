@@ -100,12 +100,20 @@ body {
 }
 
 .formal-table td {
-  padding: 0.15rem 0.3rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 0.1rem 0.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1;
+}
+
+.formal-table td span, 
+.formal-table td button,
+.formal-table td input {
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .formal-table tr:last-child td {

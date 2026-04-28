@@ -129,6 +129,7 @@ export const AppProvider = ({ children }) => {
             let sourceType = 'delivery';
             
             if (id.startsWith('implicit-order-')) {
+                sourceType = 'order';
                 const orderId = id.replace('implicit-order-', '');
                 source = activeData.orders.find(o => o.id === orderId);
             } else {

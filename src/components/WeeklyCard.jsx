@@ -116,9 +116,9 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
     const personalStock = stats.consumptionInWeek.filter(c => !c.isDepartmentStock && c.weeksSincePurchase > 1);
     const departmentStock = stats.consumptionInWeek.filter(c => c.isDepartmentStock);
 
-    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + c.weeklyCost, 0);
-    const personalStockTotal = personalStock.reduce((acc, c) => acc + c.weeklyCost, 0);
-    const departmentStockTotal = departmentStock.reduce((acc, c) => acc + c.weeklyCost, 0);
+    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
+    const personalStockTotal = personalStock.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
+    const departmentStockTotal = departmentStock.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
     const stockConsumptionTotal = personalStockTotal + departmentStockTotal;
 
     return (
@@ -162,9 +162,9 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '40%' }}>Naam</th>
-                                <th style={{ width: '10%', textAlign: 'center' }}>Q</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>€</th>
+                                <th style={{ width: '27%' }}>Naam</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Q</th>
+                                <th style={{ width: '18%', textAlign: 'center' }}>€</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}>W</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
                                 <th style={{ width: '10%' }}></th>
@@ -233,9 +233,9 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '40%' }}>Naam</th>
-                                <th style={{ width: '10%', textAlign: 'center' }}>Q</th>
-                                <th style={{ width: '20%', textAlign: 'center' }}>€</th>
+                                <th style={{ width: '27%' }}>Naam</th>
+                                <th style={{ width: '15%', textAlign: 'center' }}>Q</th>
+                                <th style={{ width: '18%', textAlign: 'center' }}>€</th>
                                 <th style={{ width: '10%', textAlign: 'center' }}>W</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
                                 <th style={{ width: '10%' }}></th>
@@ -274,16 +274,18 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '40%' }}>Naam</th>
+                                <th style={{ width: '30%' }}>Naam</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Status</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Kost</th>
+                                <th style={{ width: '30%', textAlign: 'center' }}>Status</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Kost</th>
                             </tr>
                         </thead>
                         <tbody>
                             {consumptionFromDelivery.length > 0 ? consumptionFromDelivery.map(c => (
                                 <tr key={c.id}>
-                                    <td style={{ fontWeight: '500' }}>{c.displayName}</td>
+                                    <td style={{ fontWeight: '500' }}>
+                                        <EditableCell value={c.displayName} onSave={(val) => updateItem('consumption', c.id, { name: val })} />
+                                    </td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
@@ -310,17 +312,19 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                     <table className="formal-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '40%' }}>Naam</th>
+                                <th style={{ width: '30%' }}>Naam</th>
                                 <th style={{ width: '20%', textAlign: 'center' }}>Sub</th>
-                                <th style={{ width: '25%', textAlign: 'center' }}>Status</th>
-                                <th style={{ width: '15%', textAlign: 'center' }}>Kost</th>
+                                <th style={{ width: '30%', textAlign: 'center' }}>Status</th>
+                                <th style={{ width: '20%', textAlign: 'center' }}>Kost</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* Persoonlijke Stock */}
                             {personalStock.length > 0 ? personalStock.map(c => (
                                 <tr key={c.id}>
-                                    <td style={{ fontWeight: '500' }}>{c.displayName}</td>
+                                    <td style={{ fontWeight: '500' }}>
+                                        <EditableCell value={c.displayName} onSave={(val) => updateItem('consumption', c.id, { name: val })} />
+                                    </td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>

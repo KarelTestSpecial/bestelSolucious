@@ -48,8 +48,10 @@ export const useWeeklyStats = () => {
                     if (completedEndAbs < targetAbs) return null;
                 }
 
-                const cost = explicitConsumption ? explicitConsumption.cost : d.price * d.qty;
-                const weeklyCost = cost / duration;
+                const cost = (explicitConsumption && explicitConsumption.sourceType === 'department')
+                    ? (Number(explicitConsumption.cost) || 0)
+                    : (Number(d.price) || 0) * (Number(d.qty) || 0);
+                const weeklyCost = cost / (Number(duration) || 1);
                 const weeksSincePurchase = targetAbs - startAbs + 1;
 
                 return {
@@ -74,24 +76,28 @@ export const useWeeklyStats = () => {
             .filter(o => !activeData.deliveries.some(d => d.orderId === o.id))
             .map(o => {
                 const startAbs = getAbsoluteWeek(o.weekId);
-                const duration = o.estDuration || 1;
+                const explicitConsumption = activeData.consumption.find(c => c.sourceId === o.id);
+                
+                const duration = explicitConsumption 
+                    ? (explicitConsumption.effDuration || explicitConsumption.estDuration || o.estDuration || 1)
+                    : (o.estDuration || 1);
                 const endAbs = startAbs + duration - 1;
 
                 if (targetAbs < startAbs || targetAbs > endAbs) return null;
 
-                const cost = o.price * o.qty;
-                const weeklyCost = cost / duration;
+                const cost = (Number(o.price) || 0) * (Number(o.qty) || 0);
+                const weeklyCost = cost / (Number(duration) || 1);
                 const weeksSincePurchase = targetAbs - startAbs + 1;
 
                 return {
-                    id: `implicit-order-${o.id}`,
+                    id: explicitConsumption ? explicitConsumption.id : `implicit-order-${o.id}`,
                     displayName: o.name || 'Besteld Item',
                     cost: cost,
                     qty: o.qty,
                     startDate: o.weekId,
-                    estDuration: o.estDuration,
-                    effDuration: null,
-                    completed: false,
+                    estDuration: explicitConsumption ? explicitConsumption.estDuration : o.estDuration,
+                    effDuration: explicitConsumption ? explicitConsumption.effDuration : null,
+                    completed: explicitConsumption ? explicitConsumption.completed : false,
                     weeklyCost: weeklyCost,
                     weeksSincePurchase: weeksSincePurchase,
                     duration: duration,
