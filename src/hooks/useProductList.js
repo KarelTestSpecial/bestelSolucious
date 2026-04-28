@@ -17,17 +17,17 @@ export const useProductList = () => {
             const name = d.name.toLowerCase().trim();
             if (!productsMap.has(name)) {
                 productsMap.set(name, {
-                    name: name,
+                    name: d.name,
                     price: d.price,
                     estDuration: d.estDuration || 1,
                     lastWeekId: d.weekId
                 });
             } else {
                 const existing = productsMap.get(name);
-                // Update naar de meest recente prijs/duur indien nodig
                 if (getAbsoluteWeek(d.weekId) > getAbsoluteWeek(existing.lastWeekId)) {
                     productsMap.set(name, {
                         ...existing,
+                        name: d.name,
                         price: d.price,
                         estDuration: d.estDuration || 1,
                         lastWeekId: d.weekId
@@ -41,7 +41,7 @@ export const useProductList = () => {
             const name = o.name.toLowerCase().trim();
             if (!productsMap.has(name)) {
                 productsMap.set(name, {
-                    name: name,
+                    name: o.name,
                     price: o.price,
                     estDuration: o.estDuration || 1,
                     lastWeekId: o.weekId
@@ -51,11 +51,33 @@ export const useProductList = () => {
                 if (getAbsoluteWeek(o.weekId) > getAbsoluteWeek(existing.lastWeekId)) {
                     productsMap.set(name, {
                         ...existing,
+                        name: o.name,
                         price: o.price,
                         estDuration: o.estDuration || 1,
                         lastWeekId: o.weekId
                     });
                 }
+            }
+        });
+
+        // Verwerk expliciete producten (deze kunnen handmatig ingestelde estDuration hebben)
+        (activeData.products || []).forEach(p => {
+            const name = p.name.toLowerCase().trim();
+            if (!productsMap.has(name)) {
+                productsMap.set(name, {
+                    id: p.id,
+                    name: p.name,
+                    price: 0,
+                    estDuration: p.estDuration || 1,
+                    lastWeekId: '0000-W00'
+                });
+            } else {
+                const existing = productsMap.get(name);
+                productsMap.set(name, {
+                    ...existing,
+                    id: p.id,
+                    estDuration: p.estDuration || existing.estDuration
+                });
             }
         });
 

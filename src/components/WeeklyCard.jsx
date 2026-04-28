@@ -4,7 +4,7 @@ import { useProductList } from '../hooks/useProductList';
 import { getDateOfTuesday } from '../utils/weekUtils';
 import PropTypes from 'prop-types';
 
-const EditableCell = ({ value, onSave, type = 'text', style = {}, precision = 2 }) => {
+export const EditableCell = ({ value, onSave, type = 'text', style = {}, precision = 2 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempValue, setTempValue] = useState(value);
 
@@ -12,6 +12,15 @@ const EditableCell = ({ value, onSave, type = 'text', style = {}, precision = 2 
         setIsEditing(false);
         const finalValue = type === 'number' ? parseFloat(tempValue) : tempValue;
         if (finalValue !== value) onSave(finalValue);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        } else if (e.key === 'Escape') {
+            setTempValue(value);
+            setIsEditing(false);
+        }
     };
 
     if (isEditing) {
@@ -22,6 +31,7 @@ const EditableCell = ({ value, onSave, type = 'text', style = {}, precision = 2 
                 value={tempValue}
                 onChange={(e) => setTempValue(e.target.value)}
                 onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 autoFocus
                 style={{ ...style, padding: '2px 4px', fontSize: 'inherit' }}
             />
@@ -276,7 +286,11 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     <td style={{ fontWeight: '500' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
-                                        {c.weeksSincePurchase} / {c.duration} w
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            {c.weeksSincePurchase} / 
+                                            <EditableCell value={c.duration} type="number" onSave={(val) => updateItem('consumption', c.id, { estDuration: val })} precision={0} />
+                                            w
+                                        </div>
                                     </td>
                                     <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--accent-primary)' }}>€{c.weeklyCost.toFixed(2)}</td>
                                 </tr>
@@ -309,7 +323,11 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     <td style={{ fontWeight: '500' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>€{c.cost.toFixed(2)}</td>
                                     <td style={{ textAlign: 'center' }}>
-                                        {c.weeksSincePurchase} / {c.duration} w
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            {c.weeksSincePurchase} / 
+                                            <EditableCell value={c.duration} type="number" onSave={(val) => updateItem('consumption', c.id, { estDuration: val })} precision={0} />
+                                            w
+                                        </div>
                                     </td>
                                     <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--accent-secondary)' }}>€{c.weeklyCost.toFixed(2)}</td>
                                 </tr>

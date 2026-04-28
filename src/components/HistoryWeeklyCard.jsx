@@ -1,8 +1,11 @@
 import React from 'react';
 import { getDateOfTuesday } from '../utils/weekUtils';
+import { useAppContext } from '../context/AppContext';
+import { EditableCell } from './WeeklyCard';
 import PropTypes from 'prop-types';
 
 const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
+    const { updateItem } = useAppContext();
     const { orders, deliveries, verbruik, totals } = weekData;
 
     const consumptionFromDelivery = verbruik.filter(c => c.weeksSincePurchase <= 1);
@@ -116,7 +119,11 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
                                 <tr key={c.id}>
                                     <td style={{ fontWeight: '600' }}>{c.displayName}</td>
                                     <td style={{ textAlign: 'center' }}>
-                                        {c.weeksSincePurchase} / {c.duration} w
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            {c.weeksSincePurchase} / 
+                                            <EditableCell value={c.duration} type="number" onSave={(val) => updateItem('consumption', c.id, { estDuration: val })} precision={0} />
+                                            w
+                                        </div>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>€{(c.cost || 0).toFixed(2)}</td>
                                     <td style={{ textAlign: 'right', fontWeight: '700', color: 'var(--accent-primary)' }}>

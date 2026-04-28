@@ -1,7 +1,9 @@
-import React from 'react';
+import { useAppContext } from '../context/AppContext';
 import { useProductList } from '../hooks/useProductList';
+import { EditableCell } from './WeeklyCard';
 
 const ProductList = () => {
+    const { updateItem } = useAppContext();
     const { getProductList } = useProductList();
     const products = getProductList();
 
@@ -44,7 +46,13 @@ const ProductList = () => {
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
                                             <span style={{ fontSize: '1.1rem' }}>🕒</span>
-                                            {product.estDuration} {product.estDuration === 1 ? 'week' : 'weken'}
+                                            <EditableCell 
+                                                value={product.estDuration} 
+                                                type="number" 
+                                                onSave={(val) => updateItem('products', product.id || product.name, { estDuration: val })} 
+                                                precision={0} 
+                                            />
+                                            {product.estDuration === 1 ? 'week' : 'weken'}
                                         </div>
                                     </td>
                                 </tr>

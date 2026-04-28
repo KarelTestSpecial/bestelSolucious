@@ -8,12 +8,16 @@ export const useWeeklyStats = () => {
         const targetAbs = getAbsoluteWeek(weekId);
 
         // 3.a Bestellingen van deze week
-        const orders = activeData.orders.filter(o => o.weekId === weekId);
-        const orderTotal = orders.reduce((sum, o) => sum + (o.price * o.qty), 0);
+        const orders = activeData.orders
+            .filter(o => o.weekId === weekId)
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const orderTotal = orders.reduce((sum, o) => sum + ((Number(o.price) || 0) * (o.qty || 0)), 0);
 
         // 3.b.1 Leveringen van deze week
-        const deliveries = activeData.deliveries.filter(d => d.weekId === weekId);
-        const deliveryTotal = deliveries.reduce((sum, d) => sum + (d.price * d.qty), 0);
+        const deliveries = activeData.deliveries
+            .filter(d => d.weekId === weekId)
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const deliveryTotal = deliveries.reduce((sum, d) => sum + ((Number(d.price) || 0) * (d.qty || 0)), 0);
 
         // Effective consumption is now based on all deliveries that are in stock and "active" for the current week
         const consumptionBySource = activeData.consumption
@@ -125,9 +129,9 @@ export const useWeeklyStats = () => {
             ...consumptionFromDeliveries, 
             ...consumptionFromOrders,
             ...consumptionFromDepartment
-        ];
+        ].sort((a, b) => a.displayName.localeCompare(b.displayName));
 
-        const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + c.weeklyCost, 0);
+        const totalConsumptionCost = consumptionInWeek.reduce((sum, c) => sum + (Number(c.weeklyCost) || 0), 0);
 
         // 3.c VOORRAAD EVOLUTIE (Stand aan einde van deze week)
         const inventoryAtEnd = activeData.products.map(product => {

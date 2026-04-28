@@ -67,13 +67,20 @@ export async function addOrder(userId, order) {
   };
   await saveDocument(userId, 'orders', id, data);
   
-  // Ensure product exists
-  const productSnap = await getDoc(doc(db, 'users', userId, 'products', order.productId || order.name));
+  // Ensure product exists and has estDuration
+  const productId = order.productId || order.name;
+  const productRef = doc(db, 'users', userId, 'products', productId);
+  const productSnap = await getDoc(productRef);
+  
   if (!productSnap.exists()) {
-    await saveDocument(userId, 'products', order.productId || order.name, {
+    await saveDocument(userId, 'products', productId, {
       name: order.name,
-      stock: 0
+      stock: 0,
+      estDuration: order.estDuration || 1
     });
+  } else if (order.estDuration && !productSnap.data().estDuration) {
+    // Fill in missing estDuration
+    await updateDoc(productRef, { estDuration: order.estDuration });
   }
   
   return { id, ...data };
@@ -98,7 +105,12 @@ export async function addBatchOrders(userId, weekId, orders) {
     });
     
     const productRef = doc(db, 'users', userId, 'products', productId);
-    batch.set(productRef, { name: item.name, stock: 0 }, { merge: true });
+    // Batch set with merge to ensure estDuration is preserved if it exists, or set if it doesn't
+    batch.set(productRef, { 
+        name: item.name, 
+        stock: 0,
+        estDuration: item.estDuration || 1
+    }, { merge: true });
   }
   
   await batch.commit();
