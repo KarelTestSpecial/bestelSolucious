@@ -128,12 +128,18 @@ export async function updateItem(userId, type, id, updates) {
   if (!userId) return;
   const collectionMap = {
     'order': 'orders',
+    'orders': 'orders',
     'delivery': 'deliveries',
+    'deliveries': 'deliveries',
     'consumption': 'consumption',
-    'product': 'products'
+    'product': 'products',
+    'products': 'products'
   };
   const collectionName = collectionMap[type];
-  if (!collectionName) return;
+  if (!collectionName) {
+    console.error(`Unknown collection type: ${type}`);
+    return;
+  }
 
   try {
     const docRef = doc(db, 'users', userId, collectionName, id);
@@ -141,8 +147,9 @@ export async function updateItem(userId, type, id, updates) {
       ...updates,
       updatedAt: new Date().toISOString()
     });
+    console.log(`Successfully updated ${collectionName}/${id}`);
   } catch (error) {
-    console.error(`Error updating ${type}:`, error);
+    console.error(`Error updating ${collectionName}:`, error);
     throw error;
   }
 }
@@ -151,18 +158,25 @@ export async function deleteItem(userId, type, id) {
   if (!userId) return;
   const collectionMap = {
     'order': 'orders',
+    'orders': 'orders',
     'delivery': 'deliveries',
+    'deliveries': 'deliveries',
     'consumption': 'consumption',
-    'product': 'products'
+    'product': 'products',
+    'products': 'products'
   };
   const collectionName = collectionMap[type];
-  if (!collectionName) return;
+  if (!collectionName) {
+    console.error(`Unknown collection type for delete: ${type}`);
+    return;
+  }
 
   try {
     await deleteDoc(doc(db, 'users', userId, collectionName, id));
+    console.log(`Successfully deleted ${collectionName}/${id}`);
     
     // Cascading deletes for deliveries -> consumption
-    if (type === 'delivery') {
+    if (collectionName === 'deliveries') {
       const consumptionQ = query(
         collection(db, 'users', userId, 'consumption'),
         where('sourceId', '==', id)
@@ -171,9 +185,10 @@ export async function deleteItem(userId, type, id) {
       const batch = writeBatch(db);
       snap.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
+      console.log(`Cascaded deletion for consumption items linked to delivery ${id}`);
     }
   } catch (error) {
-    console.error(`Error deleting ${type}:`, error);
+    console.error(`Error deleting ${collectionName}:`, error);
     throw error;
   }
 }
