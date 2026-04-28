@@ -50,6 +50,21 @@ Dubbelklik op het icoon `Bestel Solucious` in uw applicatielijst, of voer uit in
 Gebruik twee terminals:
 1.  Terminal 1 (Backend): `node server/index.js`
 2.  Terminal 2 (Frontend): `pnpm dev`
+3.  Open je browser op: `http://localhost:5173`
+
+## Hoe te Deployen (Cloud)
+
+De applicatie is geconfigureerd om te draaien op Firebase Hosting. Gebruik de volgende stappen om wijzigingen live te zetten:
+
+1.  **Bouw de applicatie:**
+    ```bash
+    pnpm build
+    ```
+2.  **Deploy naar Firebase:**
+    ```bash
+    pnpm dlx firebase-tools deploy
+    ```
+    *Dit commando uploadt de inhoud van de `dist` map naar de cloud.*
 
 ## Uitleg van de Schermen
 
