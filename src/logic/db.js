@@ -61,14 +61,15 @@ export async function getFullData(userId) {
 
 export async function addOrder(userId, order) {
   const id = crypto.randomUUID();
+  const productId = order.productId || order.name || 'unknown';
   const data = {
     ...order,
+    productId,
     createdAt: new Date().toISOString()
   };
   await saveDocument(userId, 'orders', id, data);
   
   // Ensure product exists and has estDuration
-  const productId = order.productId || order.name;
   const productRef = doc(db, 'users', userId, 'products', productId);
   const productSnap = await getDoc(productRef);
   

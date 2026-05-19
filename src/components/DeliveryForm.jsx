@@ -43,33 +43,42 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
 
     const deliveryPayload = pendingOrders.map(order => {
       const deliveryId = crypto.randomUUID();
+      const orderPrice = typeof order.price === 'number' ? order.price : (parseFloat(order.price) || 0);
+      const orderQty = typeof order.qty === 'number' ? order.qty : (parseInt(order.qty) || 1);
+      const orderEstDuration = typeof order.estDuration === 'number' ? order.estDuration : (parseInt(order.estDuration) || 1);
+
       return {
         delivery: {
           id: deliveryId,
           orderId: order.id,
-          productId: order.productId,
+          productId: order.productId || order.name || 'unknown',
           name: order.name,
-          price: order.price,
-          qty: order.qty,
-          estDuration: order.estDuration,
+          price: orderPrice,
+          qty: orderQty,
+          estDuration: orderEstDuration,
           weekId: weekId
         },
         consumption: {
           sourceId: deliveryId,
           sourceType: 'delivery',
           name: order.name,
-          qty: order.qty,
-          cost: order.price * order.qty,
+          qty: orderQty,
+          cost: orderPrice * orderQty,
           startDate: weekId,
-          estDuration: order.estDuration,
+          estDuration: orderEstDuration,
           effDuration: null,
           completed: false
         }
       };
     });
 
-    await confirmBatchDeliveries(deliveryPayload);
-    onClose();
+    try {
+      await confirmBatchDeliveries(deliveryPayload);
+      onClose();
+    } catch (error) {
+      console.error("Batch delivery confirmation failed:", error);
+      alert("Fout bij bevestigen van levering: " + error.message);
+    }
   };
 
   return createPortal(
