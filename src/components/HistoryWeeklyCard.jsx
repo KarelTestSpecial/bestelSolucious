@@ -11,9 +11,6 @@ const HistoryWeeklyCard = ({ weekId, weekData, onOpenModal }) => {
     const consumptionFromDelivery = verbruik.filter(c => c.weeksSincePurchase <= 1);
     const consumptionFromStock = verbruik.filter(c => c.weeksSincePurchase > 1);
 
-    const deliveryConsumptionTotal = consumptionFromDelivery.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
-    const stockConsumptionTotal = consumptionFromStock.reduce((acc, c) => acc + (Number(c.weeklyCost) || 0), 0);
-
     return (
         <div className="glass-panel" style={{ marginBottom: '0.6rem', padding: '0.6rem' }}>
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.3rem' }}>

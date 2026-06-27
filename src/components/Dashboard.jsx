@@ -8,7 +8,7 @@ import { WeeklyCard } from './WeeklyCard';
 
 const Dashboard = () => {
     const { getTimeline } = useWeeklyStats();
-    const { undo, canUndo, isLoading } = useAppContext();
+    const { isLoading } = useAppContext();
     const [activeModal, setActiveModal] = useState(null);
     const [modalWeekId, setModalWeekId] = useState(null);
 

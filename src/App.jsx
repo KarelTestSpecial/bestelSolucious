@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { useWeeklyStats } from './hooks/useWeeklyStats';
+import { downloadOrdersMarkdown } from './utils/exportOrders';
 import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
 import DataManager from './components/DataManager';
@@ -8,7 +10,36 @@ import './index.css';
 
 function AppContent() {
     const [activeTab, setActiveTab] = useState('dashboard');
-    const { undo, canUndo } = useAppContext();
+    const { undo, redo, canUndo, canRedo } = useAppContext();
+    const { getTimeline } = useWeeklyStats();
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!(e.ctrlKey || e.metaKey)) return;
+
+            // Laat de native tekst-undo met rust terwijl een veld bewerkt wordt.
+            const el = document.activeElement;
+            const isEditing = el && (
+                el.tagName === 'INPUT' ||
+                el.tagName === 'TEXTAREA' ||
+                el.tagName === 'SELECT' ||
+                el.isContentEditable
+            );
+            if (isEditing) return;
+
+            const key = e.key.toLowerCase();
+            if (key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                if (canUndo) undo();
+            } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+                e.preventDefault();
+                if (canRedo) redo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo, canUndo, canRedo]);
 
     return (
         <div id="root">
@@ -18,15 +49,34 @@ function AppContent() {
                         <span style={{ fontSize: '1.1rem', fontWeight: '700', background: 'linear-gradient(135deg, #3b82f6, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                             Bestel Solucious
                         </span>
-                        <button 
-                            onClick={undo} 
+                        <button
+                            onClick={undo}
                             disabled={!canUndo}
                             className="secondary"
                             style={{ padding: '2px 8px', fontSize: '0.7rem', opacity: canUndo ? 1 : 0.3, borderRadius: '6px' }}
-                            title="Ongedaan maken"
+                            title="Ongedaan maken (Ctrl+Z)"
                         >
                             ↩️ Undo
                         </button>
+                        <button
+                            onClick={redo}
+                            disabled={!canRedo}
+                            className="secondary"
+                            style={{ padding: '2px 8px', fontSize: '0.7rem', opacity: canRedo ? 1 : 0.3, borderRadius: '6px' }}
+                            title="Opnieuw uitvoeren (Ctrl+Y)"
+                        >
+                            ↪️ Redo
+                        </button>
+                        {activeTab === 'dashboard' && (
+                            <button
+                                onClick={() => downloadOrdersMarkdown(getTimeline())}
+                                className="secondary"
+                                style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: '6px' }}
+                                title="Download de bestellingen (week N t/m N+4) als markdown"
+                            >
+                                ⬇️ Bestellingen (.md)
+                            </button>
+                        )}
                     </div>
                     <div className="nav-links">
                         <button 

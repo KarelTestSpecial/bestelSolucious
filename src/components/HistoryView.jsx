@@ -22,18 +22,37 @@ const HistoryView = () => {
     const today = new Date();
     const threeMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 3));
 
+    const [autoToday, setAutoToday] = useState(
+        () => localStorage.getItem('historyAutoToday') === 'true'
+    );
+
     const [startDate, setStartDate] = useState(
         localStorage.getItem('historyStartDate') || threeMonthsAgo.toISOString().split('T')[0]
     );
     const [endDate, setEndDate] = useState(
-        localStorage.getItem('historyEndDate') || today.toISOString().split('T')[0]
+        () => {
+            const stored = localStorage.getItem('historyEndDate');
+            return localStorage.getItem('historyAutoToday') === 'true'
+                ? today.toISOString().split('T')[0]
+                : (stored || today.toISOString().split('T')[0]);
+        }
     );
 
-    // Save date changes to localStorage
+    // Save date changes + preference to localStorage
     useEffect(() => {
         localStorage.setItem('historyStartDate', startDate);
-        localStorage.setItem('historyEndDate', endDate);
-    }, [startDate, endDate]);
+        if (!autoToday) {
+            localStorage.setItem('historyEndDate', endDate);
+        }
+        localStorage.setItem('historyAutoToday', String(autoToday));
+    }, [startDate, endDate, autoToday]);
+
+    // When autoToday is toggled on, reset endDate to today
+    useEffect(() => {
+        if (autoToday) {
+            setEndDate(new Date().toISOString().split('T')[0]);
+        }
+    }, [autoToday]);
 
     const weekIds = useMemo(() => {
         if (!startDate || !endDate) return [];
@@ -105,6 +124,10 @@ const HistoryView = () => {
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
                         <span>-</span>
                         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onWheel={(e) => e.target.blur()} style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', colorScheme: 'dark' }} />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', userSelect: 'none' }}>
+                            <input type="checkbox" checked={autoToday} onChange={e => setAutoToday(e.target.checked)} style={{ cursor: 'pointer' }} />
+                            automatisch vandaag
+                        </label>
                     </div>
                     <div style={{ flexGrow: 1 }}></div>
                     <div className="glass-panel" style={{ padding: '0.5rem' }}>

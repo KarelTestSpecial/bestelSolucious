@@ -90,7 +90,6 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
         setNewDelivery(prev => {
             const newData = { ...prev, name };
             const match = products.find(p => p.name.toLowerCase().trim() === name.toLowerCase().trim());
-            console.log(`Auto-fill Zoekopdracht (Levering): "${name}"`, match ? `GEVONDEN: €${match.price}` : "NIET GEVONDEN");
             if (match) {
                 newData.price = match.price.toString();
                 newData.estDuration = parseInt(match.estDuration || 1);
@@ -262,6 +261,23 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     </td>
                                 </tr>
                             )) : !newDelivery && <tr><td colSpan="6" className="empty-text">Geen leveringen</td></tr>}
+
+                            {newDelivery && (
+                                <tr>
+                                    <td>
+                                        <input list="product-suggestions-delivery" className="input-field" value={newDelivery.name} onChange={handleDeliveryNameChange} autoFocus placeholder="Product..." />
+                                        <datalist id="product-suggestions-delivery">
+                                            {products.map(p => <option key={p.id} value={p.name} />)}
+                                        </datalist>
+                                    </td>
+                                    <td><input className="input-field text-center" type="number" value={newDelivery.qty} onChange={e => setNewDelivery({...newDelivery, qty: parseInt(e.target.value)})} /></td>
+                                    <td><input className="input-field text-center" type="number" step="0.01" value={newDelivery.price} onChange={e => setNewDelivery({...newDelivery, price: e.target.value})} /></td>
+                                    <td><input className="input-field text-center" type="number" value={newDelivery.estDuration} onChange={e => setNewDelivery({...newDelivery, estDuration: parseInt(e.target.value)})} /></td>
+                                    <td colSpan="2">
+                                        <button onClick={() => { confirmDelivery({ ...newDelivery, weekId, price: parseFloat(newDelivery.price) }); setNewDelivery(null); }}>Opslaan</button>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </section>

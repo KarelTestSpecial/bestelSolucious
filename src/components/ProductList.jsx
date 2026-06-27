@@ -1,9 +1,10 @@
+import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useProductList } from '../hooks/useProductList';
 import { EditableCell } from './WeeklyCard';
 
 const ProductList = () => {
-    const { updateItem } = useAppContext();
+    const { updateItem, deleteItem } = useAppContext();
     const { getProductList } = useProductList();
     const products = getProductList();
 
@@ -24,17 +25,18 @@ const ProductList = () => {
                                 <th>Product Naam</th>
                                 <th>Laatst Bekende Prijs</th>
                                 <th>Geschatte Gebruiksduur</th>
+                                <th style={{ width: '40px', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan="3" className="empty-text" style={{ textAlign: 'center', padding: '2rem' }}>
+                                    <td colSpan="4" className="empty-text" style={{ textAlign: 'center', padding: '2rem' }}>
                                         Geen producten gevonden.
                                     </td>
                                 </tr>
                             ) : products.map((product, index) => (
-                                <tr key={index}>
+                                <tr key={product.id || index}>
                                     <td>
                                         <div style={{ fontWeight: '600', color: '#fff' }}>{product.name}</div>
                                     </td>
@@ -54,6 +56,11 @@ const ProductList = () => {
                                             />
                                             {product.estDuration === 1 ? 'week' : 'weken'}
                                         </div>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        {product.id ? (
+                                            <button onClick={() => deleteItem('products', product.id)} style={{ background: 'transparent', color: 'var(--accent-danger)', padding: 0, border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>
+                                        ) : null}
                                     </td>
                                 </tr>
                             ))}

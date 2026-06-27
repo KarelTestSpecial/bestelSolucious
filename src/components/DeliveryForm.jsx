@@ -24,6 +24,7 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
 
   const [date, setDate] = useState(initialWeekId ? getDateFromWeekId(initialWeekId) : getToday());
   const [weekId, setWeekId] = useState(initialWeekId || getCurrentWeekId());
+  const [checkedIds, setCheckedIds] = useState(new Set());
 
   useEffect(() => {
     if (date) {
@@ -31,17 +32,40 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
     }
   }, [date]);
 
+  useEffect(() => {
+    setCheckedIds(new Set(pendingOrders.map(o => o.id)));
+  }, [activeData.orders, activeData.deliveries, weekId]);
+
   const pendingOrders = activeData.orders.filter(order => {
     const isDelivered = activeData.deliveries.some(d => d.orderId === order.id);
     const isInSelectedWeek = order.weekId === weekId;
     return !isDelivered && isInSelectedWeek;
   });
 
+  const toggleItem = (id) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (checkedIds.size === pendingOrders.length) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(pendingOrders.map(o => o.id)));
+    }
+  };
+
+  const selectedOrders = pendingOrders.filter(o => checkedIds.has(o.id));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (pendingOrders.length === 0) return;
+    if (selectedOrders.length === 0) return;
 
-    const deliveryPayload = pendingOrders.map(order => {
+    const deliveryPayload = selectedOrders.map(order => {
       const deliveryId = crypto.randomUUID();
       const orderPrice = typeof order.price === 'number' ? order.price : (parseFloat(order.price) || 0);
       const orderQty = typeof order.qty === 'number' ? order.qty : (parseInt(order.qty) || 1);
@@ -98,7 +122,7 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <p className="stat-label">
-                De volgende <strong>{pendingOrders.length}</strong> artikelen worden bevestigd als geleverd:
+                Selecteer welke artikelen geleverd zijn:
             </p>
 
             <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '0', overflow: 'hidden' }}>
@@ -106,6 +130,14 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
                     <table>
                         <thead>
                             <tr>
+                                <th style={{ width: '40px', textAlign: 'center' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={checkedIds.size === pendingOrders.length && pendingOrders.length > 0}
+                                        onChange={toggleAll}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                </th>
                                 <th>Product</th>
                                 <th style={{ textAlign: 'center' }}>Aantal</th>
                                 <th style={{ textAlign: 'right' }}>Prijs</th>
@@ -113,7 +145,15 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
                         </thead>
                         <tbody>
                             {pendingOrders.map(o => (
-                                <tr key={o.id}>
+                                <tr key={o.id} style={{ background: checkedIds.has(o.id) ? 'rgba(59, 130, 246, 0.05)' : 'transparent' }}>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={checkedIds.has(o.id)}
+                                            onChange={() => toggleItem(o.id)}
+                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                    </td>
                                     <td style={{ fontWeight: '600' }}>{o.name}</td>
                                     <td style={{ textAlign: 'center' }}>{o.qty}</td>
                                     <td style={{ textAlign: 'right' }}>
@@ -153,8 +193,8 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
                 </p>
             </div>
 
-            <button type="submit" style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}>
-                ✅ Bevestig Alle Artikelen
+            <button type="submit" style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem', opacity: selectedOrders.length === 0 ? 0.5 : 1 }} disabled={selectedOrders.length === 0}>
+                ✅ Bevestig {selectedOrders.length} van {pendingOrders.length} artikel{selectedOrders.length !== 1 ? 'en' : ''}
             </button>
           </form>
         )}

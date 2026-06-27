@@ -1,8 +1,7 @@
 import { auth } from './firebase';
 export { auth };
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   signInAnonymously

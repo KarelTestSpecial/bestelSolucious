@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getWeekIdFromDate } from '../utils/weekUtils';
 import * as dbLogic from '../logic/db';
-import { setupAuthListeners, loginAnonymously } from '../logic/auth';
+import { setupAuthListeners } from '../logic/auth';
 import Login from '../components/Login';
 
 const AppContext = createContext();
@@ -211,13 +211,19 @@ export const AppProvider = ({ children }) => {
     const undo = async () => {
         if (undoStack.length === 0) return;
         const prevState = undoStack[undoStack.length - 1];
+        // Bewaar de huidige state zodat redo de undo kan terugdraaien.
+        setRedoStack(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(activeData))]);
         setUndoStack(prev => prev.slice(0, -1));
         await importData(prevState, true);
     };
 
     const redo = async () => {
-        // Redo functionality removed for simplicity in this port, 
-        // can be re-implemented if needed.
+        if (redoStack.length === 0) return;
+        const nextState = redoStack[redoStack.length - 1];
+        // Bewaar de huidige state zodat undo de redo opnieuw kan terugdraaien.
+        setUndoStack(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(activeData))]);
+        setRedoStack(prev => prev.slice(0, -1));
+        await importData(nextState, true);
     };
 
     const clearDatabase = async () => {
