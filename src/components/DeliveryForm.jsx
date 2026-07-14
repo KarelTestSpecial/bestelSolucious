@@ -25,6 +25,7 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
   const [date, setDate] = useState(initialWeekId ? getDateFromWeekId(initialWeekId) : getToday());
   const [weekId, setWeekId] = useState(initialWeekId || getCurrentWeekId());
   const [checkedIds, setCheckedIds] = useState(new Set());
+  const [quantities, setQuantities] = useState({});
 
   useEffect(() => {
     if (date) {
@@ -33,7 +34,18 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
   }, [date]);
 
   useEffect(() => {
-    setCheckedIds(new Set(pendingOrders.map(o => o.id)));
+    const allIds = pendingOrders.map(o => o.id);
+    setCheckedIds(new Set(allIds));
+    setQuantities(prev => {
+      const next = { ...prev };
+      allIds.forEach(id => {
+        if (!(id in next)) {
+          const order = pendingOrders.find(o => o.id === id);
+          if (order) next[id] = order.qty;
+        }
+      });
+      return next;
+    });
   }, [activeData.orders, activeData.deliveries, weekId]);
 
   const pendingOrders = activeData.orders.filter(order => {
@@ -43,19 +55,33 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
   });
 
   const toggleItem = (id) => {
-    setCheckedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const order = pendingOrders.find(o => o.id === id);
+    if (checkedIds.has(id)) {
+      setCheckedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+    } else {
+      setCheckedIds(prev => { const next = new Set(prev); next.add(id); return next; });
+      if (order && !(id in quantities)) {
+        setQuantities(q => ({ ...q, [id]: order.qty }));
+      }
+    }
   };
 
   const toggleAll = () => {
     if (checkedIds.size === pendingOrders.length) {
       setCheckedIds(new Set());
     } else {
-      setCheckedIds(new Set(pendingOrders.map(o => o.id)));
+      const allIds = pendingOrders.map(o => o.id);
+      setCheckedIds(new Set(allIds));
+      setQuantities(prev => {
+        const next = { ...prev };
+        allIds.forEach(id => {
+          if (!(id in next)) {
+            const order = pendingOrders.find(o => o.id === id);
+            if (order) next[id] = order.qty;
+          }
+        });
+        return next;
+      });
     }
   };
 
@@ -68,7 +94,7 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
     const deliveryPayload = selectedOrders.map(order => {
       const deliveryId = crypto.randomUUID();
       const orderPrice = typeof order.price === 'number' ? order.price : (parseFloat(order.price) || 0);
-      const orderQty = typeof order.qty === 'number' ? order.qty : (parseInt(order.qty) || 1);
+      const deliveredQty = typeof quantities[order.id] === 'number' ? quantities[order.id] : (parseInt(quantities[order.id]) || order.qty || 1);
       const orderEstDuration = typeof order.estDuration === 'number' ? order.estDuration : (parseInt(order.estDuration) || 1);
 
       return {
@@ -78,7 +104,7 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
           productId: order.productId || order.name || 'unknown',
           name: order.name,
           price: orderPrice,
-          qty: orderQty,
+          qty: deliveredQty,
           estDuration: orderEstDuration,
           weekId: weekId
         },
@@ -86,8 +112,8 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
           sourceId: deliveryId,
           sourceType: 'delivery',
           name: order.name,
-          qty: orderQty,
-          cost: orderPrice * orderQty,
+          qty: deliveredQty,
+          cost: orderPrice * deliveredQty,
           startDate: weekId,
           estDuration: orderEstDuration,
           effDuration: null,
@@ -155,7 +181,21 @@ const DeliveryForm = ({ onClose, initialWeekId }) => {
                                         />
                                     </td>
                                     <td style={{ fontWeight: '600' }}>{o.name}</td>
-                                    <td style={{ textAlign: 'center' }}>{o.qty}</td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        {checkedIds.has(o.id) ? (
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                value={quantities[o.id] ?? o.qty}
+                                                onChange={(e) => setQuantities(q => ({ ...q, [o.id]: parseInt(e.target.value) || 0 }))}
+                                                style={{ width: '60px', textAlign: 'center', padding: '2px 4px' }}
+                                                className="input-field"
+                                            />
+                                        ) : (
+                                            o.qty
+                                        )}
+                                    </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <span className="badge badge-success">€{o.price.toFixed(2)}</span>
                                     </td>

@@ -73,7 +73,11 @@ export const useWeeklyStats = () => {
             .filter(Boolean);
 
         const consumptionFromOrders = activeData.orders
-            .filter(o => !activeData.deliveries.some(d => d.orderId === o.id))
+            .filter(o => {
+                if (activeData.deliveries.some(d => d.orderId === o.id)) return false;
+                if (activeData.deliveries.some(d => d.name === o.name && d.weekId === o.weekId)) return false;
+                return true;
+            })
             .map(o => {
                 const startAbs = getAbsoluteWeek(o.weekId);
                 const explicitConsumption = activeData.consumption.find(c => c.sourceId === o.id);
@@ -151,7 +155,8 @@ export const useWeeklyStats = () => {
                 .filter(o => 
                     o.productId === product.id && 
                     getAbsoluteWeek(o.weekId) <= targetAbs &&
-                    !activeData.deliveries.some(d => d.orderId === o.id)
+                    !activeData.deliveries.some(d => d.orderId === o.id) &&
+                    !activeData.deliveries.some(d => d.name === o.name && d.weekId === o.weekId)
                 )
                 .reduce((sum, o) => sum + o.qty, 0);
 
@@ -190,6 +195,7 @@ export const useWeeklyStats = () => {
                 .filter(o => {
                     if (o.productId !== product.id) return false;
                     if (activeData.deliveries.some(d => d.orderId === o.id)) return false; // Al geleverd, zit in punt 1 of 2
+                    if (activeData.deliveries.some(d => d.name === o.name && d.weekId === o.weekId)) return false; // Manueel toegevoegd
                     
                     const endAbs = getAbsoluteWeek(o.weekId) + o.estDuration - 1;
                     return endAbs <= targetAbs;
