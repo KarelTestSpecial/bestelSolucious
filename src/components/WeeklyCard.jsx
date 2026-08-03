@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useProductList } from '../hooks/useProductList';
 import { getDateOfTuesday } from '../utils/weekUtils';
@@ -69,6 +69,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
     const [newOrder, setNewOrder] = useState(null);
     const [newDelivery, setNewDelivery] = useState(null);
     const [newDeptItem, setNewDeptItem] = useState(null);
+    const addOrderBtnRef = useRef(null);
 
     // Auto-fill handlers voor nieuwe bestellingen/leveringen
     const handleOrderNameChange = (e) => {
@@ -155,7 +156,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                             🛒 Bestellingen (€{stats.orderTotal.toFixed(2)})
                         </h4>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <button onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '1px 6px', fontSize: '0.8rem', cursor: 'pointer' }}>+</button>
+                            <button ref={addOrderBtnRef} onClick={() => setNewOrder({ name: '', price: '', qty: 1, estDuration: 1 })} style={{ background: 'transparent', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', padding: '1px 6px', fontSize: '0.8rem', cursor: 'pointer' }}>+</button>
                         </div>
                     </div>
                     <table className="formal-table">
@@ -203,7 +204,7 @@ export const WeeklyCard = ({ data, onOpenModal, isFirst }) => {
                                     <td><input className="input-field text-center" type="number" step="0.01" value={newOrder.price} onChange={e => setNewOrder({...newOrder, price: e.target.value})} /></td>
                                     <td><input className="input-field text-center" type="number" value={newOrder.estDuration} onChange={e => setNewOrder({...newOrder, estDuration: parseInt(e.target.value)})} /></td>
                                     <td colSpan="2">
-                                        <button onClick={() => { addOrder({ ...newOrder, weekId, price: parseFloat(newOrder.price) }); setNewOrder(null); }}>Opslaan</button>
+                                        <button onClick={() => { addOrder({ ...newOrder, weekId, price: parseFloat(newOrder.price) }); setNewOrder(null); setTimeout(() => addOrderBtnRef.current?.focus(), 0); }}>Opslaan</button>
                                     </td>
                                 </tr>
                             )}
