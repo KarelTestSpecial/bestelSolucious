@@ -10,7 +10,7 @@ export const useWeeklyStats = () => {
         // 3.a Bestellingen van deze week
         const orders = activeData.orders
             .filter(o => o.weekId === weekId)
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         const orderTotal = orders.reduce((sum, o) => sum + ((Number(o.price) || 0) * (o.qty || 0)), 0);
 
         // 3.b.1 Leveringen van deze week
